@@ -153,8 +153,6 @@ import com.maloy.muzza.ui.screens.Screens
 import com.maloy.muzza.ui.screens.navigationBuilder
 import com.maloy.muzza.ui.screens.search.LocalSearchScreen
 import com.maloy.muzza.ui.screens.search.OnlineSearchScreen
-import com.maloy.muzza.ui.screens.settings.checkForUpdates
-import com.maloy.muzza.ui.screens.settings.isNewerVersion
 import com.maloy.muzza.ui.theme.ColorSaver
 import com.maloy.muzza.ui.theme.DefaultThemeColor
 import com.maloy.muzza.ui.theme.MuzzaTheme
@@ -236,7 +234,6 @@ class MainActivity : ComponentActivity() {
     private val permissionsLauncher =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {}
 
-    private var latestVersionName by mutableStateOf(BuildConfig.VERSION_NAME)
 
     override fun onStart() {
         super.onStart()
@@ -300,26 +297,6 @@ class MainActivity : ComponentActivity() {
         updateLanguage(this, savedLanguage)
 
         setContent {
-
-            var showBadge by remember { mutableStateOf(false) }
-            var latestVersion by remember { mutableStateOf("") }
-            LaunchedEffect(Unit) {
-                val newVersion = checkForUpdates()
-                if (newVersion != null && isNewerVersion(newVersion, BuildConfig.VERSION_NAME)) {
-                    showBadge = true
-                    latestVersion = newVersion
-                } else {
-                    showBadge = false
-                }
-            }
-
-            LaunchedEffect(Unit) {
-                if (System.currentTimeMillis() - Updater.lastCheckTime > 1.days.inWholeMilliseconds) {
-                    Updater.getLatestVersionName().onSuccess {
-                        latestVersionName = it
-                    }
-                }
-            }
 
             val snackbarHostState = remember { SnackbarHostState() }
             val enableDynamicTheme by rememberPreference(DynamicThemeKey, defaultValue = true)
@@ -514,7 +491,7 @@ class MainActivity : ComponentActivity() {
                                     (playerBottomSheetState.isCollapsed || playerBottomSheetState.isDismissed)
                         }
                     )
-                    val TopAppBarScrollBehavior = appBarScrollBehavior(
+                    val topAppBarScrollBehavior = appBarScrollBehavior(
                         canScroll = {
                             navBackStackEntry?.destination?.route?.startsWith("search/") == false &&
                                     (playerBottomSheetState.isCollapsed || playerBottomSheetState.isDismissed)
@@ -528,15 +505,6 @@ class MainActivity : ComponentActivity() {
                         defaultValue = false
                     )
 
-                    var showListenTogetherDialog by rememberSaveable { mutableStateOf(false) }
-                    val pendingSuggestions by listenTogetherManager.pendingSuggestions.collectAsState()
-                    val mediaMetadata by playerConnection?.mediaMetadata?.collectAsState() ?: remember { mutableStateOf(null) }
-                    val listenTogetherRole by listenTogetherManager.role.collectAsState()
-                    val listenTogetherStatus by listenTogetherManager.connectionState.collectAsState()
-
-
-                    val (selectedThemeColorInt) = rememberPreference(SelectedThemeColorKey, defaultValue = DefaultThemeColor.toArgb())
-                    val selectedThemeColor = Color(selectedThemeColorInt)
 
                     LaunchedEffect(Unit) {
                         if (!firstSetupPassed) {
@@ -583,12 +551,12 @@ class MainActivity : ComponentActivity() {
                             onQueryChange(TextFieldValue())
                         }
                         searchBarScrollBehavior.state.resetHeightOffset()
-                        TopAppBarScrollBehavior.state.resetHeightOffset()
+                        topAppBarScrollBehavior.state.resetHeightOffset()
                     }
                     LaunchedEffect(active) {
                         if (active) {
                             searchBarScrollBehavior.state.resetHeightOffset()
-                            TopAppBarScrollBehavior.state.resetHeightOffset()
+                            topAppBarScrollBehavior.state.resetHeightOffset()
                         }
                     }
 
@@ -746,11 +714,11 @@ class MainActivity : ComponentActivity() {
                                         navBackStackEntry?.destination?.route?.startsWith("search/") == true) {
                                         searchBarScrollBehavior.nestedScrollConnection
                                     } else {
-                                        TopAppBarScrollBehavior.nestedScrollConnection
+                                        topAppBarScrollBehavior.nestedScrollConnection
                                     }
                                 )
                         ) {
-                            navigationBuilder(navController, TopAppBarScrollBehavior)
+                            navigationBuilder(navController, topAppBarScrollBehavior)
                         }
 
                         val currentTitle = remember(navBackStackEntry) {
@@ -799,9 +767,6 @@ class MainActivity : ComponentActivity() {
                                         content = {
                                             BadgedBox(
                                                 badge = {
-                                                    if (showBadge) {
-                                                        Badge()
-                                                    }
                                                 }
                                             ) {
                                                 if (isLoggedIn && accountImageUrl.isNotEmpty()) {
@@ -858,9 +823,6 @@ class MainActivity : ComponentActivity() {
                                                     leadingIcon = {
                                                         BadgedBox(
                                                             badge = {
-                                                                if (showBadge) {
-                                                                    Badge()
-                                                                }
                                                             }
                                                         ) {
                                                             Icon(
@@ -986,9 +948,6 @@ class MainActivity : ComponentActivity() {
                                         ) {
                                             BadgedBox(
                                                 badge = {
-                                                    if (showBadge) {
-                                                        Badge()
-                                                    }
                                                 }
                                             ) {
                                                 Icon(

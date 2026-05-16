@@ -74,7 +74,6 @@ import com.maloy.muzza.constants.CrossfadeEnabledKey
 import com.maloy.muzza.constants.CrossfadeGaplessKey
 import com.maloy.muzza.constants.DiscordTokenKey
 import com.maloy.muzza.constants.DiscordUseDetailsKey
-import com.maloy.muzza.constants.EnableDiscordRPCKey
 import com.maloy.muzza.constants.HideExplicitKey
 import com.maloy.muzza.constants.KeepAliveKey
 import com.maloy.muzza.constants.MediaSessionConstants.CommandToggleLike
@@ -115,7 +114,6 @@ import com.maloy.muzza.playback.queues.Queue
 import com.maloy.muzza.playback.queues.YouTubeQueue
 import com.maloy.muzza.playback.queues.filterExplicit
 import com.maloy.muzza.utils.CoilBitmapLoader
-import com.maloy.muzza.utils.DiscordRPC
 import com.maloy.muzza.utils.YTPlayerUtils
 import com.maloy.muzza.utils.dataStore
 import com.maloy.muzza.utils.enumPreference
@@ -231,10 +229,6 @@ class MusicService : MediaLibraryService(),
 
     private var isAudioEffectSessionOpened = false
 
-    private var discordRpc: DiscordRPC? = null
-
-    private var lastPlaybackSpeed = 1.0f
-    private var discordUpdateJob: Job? = null
 
 
     private var bluetoothReceiver: BroadcastReceiver? = null
@@ -290,20 +284,8 @@ class MusicService : MediaLibraryService(),
         override fun onReceive(context: Context, intent: Intent) {
             when (intent.action) {
                 Intent.ACTION_SCREEN_OFF -> {
-                    if (!player.isPlaying) {
-                        scope.launch(Dispatchers.IO) {
-                            discordRpc?.closeRPC()
-                        }
-                    }
                 }
                 Intent.ACTION_SCREEN_ON -> {
-                    if (player.isPlaying) {
-                        scope.launch {
-                            currentSong.value?.let { song ->
-                                discordRpc?.updateSong(song, player.currentPosition, player.playbackParameters.speed, dataStore.get(DiscordUseDetailsKey, false))
-                            }
-                        }
-                    }
                 }
             }
         }
@@ -466,27 +448,6 @@ class MusicService : MediaLibraryService(),
                 secondaryPlayer?.setOffloadEnabled(useOffload)
             }
 
-        dataStore.data
-            .map { it[DiscordTokenKey] to (it[EnableDiscordRPCKey] ?: true) }
-            .debounce(300)
-            .distinctUntilChanged()
-            .collect(scope) { (key, enabled) ->
-                if (discordRpc?.isRpcRunning() == true) {
-                    discordRpc?.closeRPC()
-                }
-                discordRpc = null
-                if (key != null && enabled) {
-                    discordRpc = DiscordRPC(this, key)
-                    if (player.playbackState == Player.STATE_READY && player.playWhenReady) {
-                        val mediaId = player.currentMetadata?.id
-                        if (mediaId != null) {
-                            database.song(mediaId).first()?.let { song ->
-                                discordRpc?.updateSong(song, player.currentPosition, player.playbackParameters.speed, dataStore.get(DiscordUseDetailsKey, false))
-                            }
-                        }
-                    }
-                }
-            }
 
         dataStore.data
             .map { prefs ->
@@ -503,26 +464,6 @@ class MusicService : MediaLibraryService(),
                 crossfadeGapless = gapless
             }
 
-        dataStore.data
-            .map { it[DiscordUseDetailsKey] ?: false }
-            .debounce(1000)
-            .distinctUntilChanged()
-            .collect(scope) { useDetails ->
-                if (player.playbackState == Player.STATE_READY && player.playWhenReady) {
-                    currentSong.value?.let { song ->
-                        discordUpdateJob?.cancel()
-                        discordUpdateJob = scope.launch {
-                            delay(1000)
-                            discordRpc?.updateSong(
-                                song,
-                                player.currentPosition,
-                                player.playbackParameters.speed,
-                                useDetails
-                            )
-                        }
-                    }
-                }
-            }
 
         if (dataStore.get(PersistentQueueKey, true)) {
             runCatching {
@@ -554,16 +495,6 @@ class MusicService : MediaLibraryService(),
                 delay(30.seconds)
                 if (dataStore.get(PersistentQueueKey, true)) {
                     saveQueueToDisk()
-                }
-            }
-            if (discordRpc != null && player.isPlaying) {
-                currentSong.value?.let { song ->
-                    discordRpc?.updateSong(
-                        song,
-                        player.currentPosition,
-                        player.playbackParameters.speed,
-                        dataStore.get(DiscordUseDetailsKey, false)
-                    )
                 }
             }
         }
@@ -887,8 +818,6 @@ class MusicService : MediaLibraryService(),
             player.prepare()
             player.play()
         }
-        lastPlaybackSpeed = -1.0f
-        discordUpdateJob?.cancel()
         if (dataStore.get(AutoLoadMoreKey, true) &&
             reason != Player.MEDIA_ITEM_TRANSITION_REASON_REPEAT &&
             player.mediaItemCount - player.currentMediaItemIndex <= 5 &&
@@ -935,37 +864,10 @@ class MusicService : MediaLibraryService(),
         if (events.containsAny(EVENT_TIMELINE_CHANGED, EVENT_POSITION_DISCONTINUITY)) {
             currentMediaMetadata.value = player.currentMetadata
         }
-        if (!player.isPlaying && !events.containsAny(EVENT_POSITION_DISCONTINUITY, Player.EVENT_MEDIA_ITEM_TRANSITION)) {
-                scope.launch {
-                    discordRpc?.close()
-                }
-        }
-        if (events.containsAny(Player.EVENT_MEDIA_ITEM_TRANSITION, Player.EVENT_IS_PLAYING_CHANGED) && player.isPlaying) {
-            val mediaId = player.currentMetadata?.id
-            if (mediaId != null) {
-                scope.launch {
-                    database.song(mediaId).first()?.let { song ->
-                        discordRpc?.updateSong(song, player.currentPosition, player.playbackParameters.speed, dataStore.get(DiscordUseDetailsKey, false))
-                    }
-                }
-            }
-        }
     }
 
     override fun onPlaybackParametersChanged(playbackParameters: PlaybackParameters) {
         super.onPlaybackParametersChanged(playbackParameters)
-        if (playbackParameters.speed != lastPlaybackSpeed) {
-            lastPlaybackSpeed = playbackParameters.speed
-            discordUpdateJob?.cancel()
-            discordUpdateJob = scope.launch {
-                delay(1000)
-                if (player.playWhenReady && player.playbackState == Player.STATE_READY) {
-                    currentSong.value?.let { song ->
-                        discordRpc?.updateSong(song, player.currentPosition, playbackParameters.speed, dataStore.get(DiscordUseDetailsKey, false))
-                    }
-                }
-            }
-        }
     }
 
 
@@ -999,7 +901,6 @@ class MusicService : MediaLibraryService(),
             player.seekToNext()
             player.prepare()
             player.playWhenReady = true
-            discordUpdateJob?.cancel()
         }
     }
 
@@ -1253,10 +1154,6 @@ class MusicService : MediaLibraryService(),
         if (dataStore.get(PersistentQueueKey, true)) {
             saveQueueToDisk()
         }
-        if (discordRpc?.isRpcRunning() == true) {
-            discordRpc?.closeRPC()
-        }
-        discordRpc = null
         loudnessEnhancer?.enabled = false
         loudnessEnhancer?.release()
         loudnessEnhancer = null

@@ -1,7 +1,7 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
 
     <!-- Setup wizard -->
-    <string name="welcome_to_muzza">Добро пожаловать в Muzza</string>
+    <string name="welcome_to_muzza">Добро пожаловать в ReTune</string>
     <string name="yt_music_fingertips">YouTube-Music всегда под рукой</string>
     <string name="ytm_account_sync">Синхронизация с аккаунтом YouTube-Music</string>
     <string name="ad_free_playback">Воспроизведение без рекламы</string>
@@ -79,7 +79,7 @@
 
     <!-- Search -->
     <string name="search">Поиск</string>
-    <string name="search_yt_music">Поиск в Muzza</string>
+    <string name="search_yt_music">Поиск в ReTune</string>
     <string name="SearchHistory">История поиска</string>
     <string name="Sujestions">Предложения</string>
     <string name="SearchResutls">Результаты поиска</string>
@@ -347,9 +347,9 @@
     <string name="proxy">ПРОКСИ</string>
     <string name="enable_dynamic_theme">Включить динамическую тему</string>
     <string name="listen_youtube_music">Слушать в YouTube Music</string>
-    <string name="visit_muzza">Посетить Muzza</string>
+    <string name="visit_muzza">Посетить ReTune</string>
     <string name="artist">Исполнитель</string>
-    <string name="listen_to_muzza">Слушать в Muzza</string>
+    <string name="listen_to_muzza">Слушать в ReTune</string>
     <string name="mini_player_style">Стиль мини плеера</string>
     <string name="player_style">Стиль плеера</string>
     <string name="player_style_old">Старый</string>

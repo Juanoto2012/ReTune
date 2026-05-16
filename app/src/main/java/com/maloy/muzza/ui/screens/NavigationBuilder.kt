@@ -27,8 +27,6 @@ import com.maloy.muzza.ui.screens.search.OnlineSearchResult
 import com.maloy.muzza.ui.screens.settings.AboutScreen
 import com.maloy.muzza.ui.screens.settings.AppearanceSettings
 import com.maloy.muzza.ui.screens.settings.BackupAndRestore
-import com.maloy.muzza.ui.screens.settings.DiscordLoginScreen
-import com.maloy.muzza.ui.screens.settings.DiscordSettings
 import com.maloy.muzza.ui.screens.settings.LyricsSettings
 import com.maloy.muzza.ui.screens.settings.PlayerSettings
 import com.maloy.muzza.ui.screens.settings.PrivacySettings
@@ -295,12 +293,6 @@ fun NavGraphBuilder.navigationBuilder(
     }
     composable("settings/backup_restore") {
         BackupAndRestore(navController, scrollBehavior)
-    }
-    composable("settings/discord") {
-        DiscordSettings(navController, scrollBehavior)
-    }
-    composable("settings/discord/login") {
-        DiscordLoginScreen(navController)
     }
     composable("settings/about") {
         AboutScreen(navController, scrollBehavior)
