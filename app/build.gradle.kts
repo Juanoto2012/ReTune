@@ -25,7 +25,7 @@ android {
     compileSdk = 36
     buildToolsVersion = "35.0.0"
     defaultConfig {
-        applicationId = "com.jntx.retune"
+        applicationId = "com.maloy.muzza"
         minSdk = 24
         targetSdk = 36
         versionCode = 47

@@ -137,27 +137,28 @@ class App : Application(), ImageLoaderFactory {
     override fun newImageLoader(): ImageLoader {
         val cacheSize = dataStore[MaxImageCacheSizeKey]
 
-        return if (cacheSize == 0) {
-            ImageLoader.Builder(this).crossfade(true).respectCacheHeaders(false)
+        val maxSize = when {
+            cacheSize == 0 -> 0L
+            cacheSize == -1 -> {
+                val cacheDir = cacheDir.resolve("coil")
+                val usableSpace = cacheDir.usableSpace
+                min(usableSpace * 0.9, (2L * 1024 * 1024 * 1024).toDouble()).toLong()
+            }
+            else -> (cacheSize ?: 512) * 1024 * 1024L
+        }
+
+        if (maxSize <= 0) {
+            return ImageLoader.Builder(this).crossfade(true).respectCacheHeaders(false)
                 .allowHardware(Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
                 .diskCachePolicy(CachePolicy.DISABLED).build()
-        } else {
-            val maxSize = when {
-                cacheSize == -1 -> {
-                    val cacheDir = cacheDir.resolve("coil")
-                    val usableSpace = cacheDir.usableSpace
-                    min(usableSpace * 0.9, (2L * 1024 * 1024 * 1024).toDouble()).toLong()
-                }
-                else -> (cacheSize ?: 512) * 1024 * 1024L
-            }
-
-            ImageLoader.Builder(this).crossfade(true).respectCacheHeaders(false)
-                .allowHardware(Build.VERSION.SDK_INT >= Build.VERSION_CODES.P).diskCache(
-                    DiskCache.Builder()
-                        .directory(cacheDir.resolve("coil"))
-                        .maxSizeBytes(maxSize)
-                        .build()
-                ).build()
         }
+
+        return ImageLoader.Builder(this).crossfade(true).respectCacheHeaders(false)
+            .allowHardware(Build.VERSION.SDK_INT >= Build.VERSION_CODES.P).diskCache {
+                DiskCache.Builder()
+                    .directory(cacheDir.resolve("coil"))
+                    .maxSizeBytes(maxSize)
+                    .build()
+            }.build()
     }
 }
