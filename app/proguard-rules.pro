@@ -98,3 +98,17 @@
  -dontwarn org.apache.log4j.**
  -dontwarn org.apache.logging.log4j.**
  -dontwarn okhttp3.internal.**
+
+# JAudioTagger
+-keep class org.jaudiotagger.** { *; }
+-dontwarn java.awt.**
+-dontwarn javax.imageio.**
+-dontwarn javax.swing.**
+-dontwarn sun.security.**
+
+# OkHttp3
+-keepattributes Signature
+-keepattributes *Annotation*
+-keep class okhttp3.** { *; }
+-keep interface okhttp3.** { *; }
+-dontwarn okhttp3.**
