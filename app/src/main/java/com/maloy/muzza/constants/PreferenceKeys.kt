@@ -97,6 +97,7 @@ val TwoLineSongItemLabelKey = booleanPreferencesKey("twoLineSongItemLabel")
 
 val MaxImageCacheSizeKey = intPreferencesKey("maxImageCacheSize")
 val MaxSongCacheSizeKey = intPreferencesKey("maxSongCacheSize")
+val DownloadFolderKey = stringPreferencesKey("downloadFolder")
 
 val PauseListenHistoryKey = booleanPreferencesKey("pauseListenHistory")
 val PauseSearchHistoryKey = booleanPreferencesKey("pauseSearchHistory")

@@ -124,6 +124,7 @@ ksp {
 dependencies {
     implementation(libs.guava)
     implementation(libs.coroutines.guava)
+    implementation(libs.coroutines.play.services)
     implementation(libs.concurrent.futures)
 
     implementation(libs.activity)
@@ -163,6 +164,7 @@ dependencies {
     implementation(libs.material)
     ksp(libs.room.compiler)
     implementation(libs.room.ktx)
+    implementation(libs.documentfile)
 
     implementation(libs.apache.lang3)
 
@@ -193,6 +195,7 @@ dependencies {
     "fullImplementation"(libs.opencc4j)
 
     implementation(libs.timber)
+    implementation(libs.jaudiotagger)
     implementation(libs.ktor.client.core)
     implementation(libs.ktor.client.okhttp)
     implementation(libs.ktor.client.content.negotiation)

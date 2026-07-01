@@ -160,6 +160,7 @@
     <string name="remove_from_library">Remove from library</string>
     <string name="remove_all_from_library">Remove all from library</string>
     <string name="download">Download</string>
+    <string name="download_as_mp3">Download as MP3</string>
     <string name="downloading">Downloading</string>
     <string name="remove_download">Remove download</string>
     <string name="import_playlist">Import playlist</string>
@@ -462,6 +463,7 @@
     <string name="crossfade_gapless_desc">Don\'t crossfade if the album is gapless</string>
     <string name="lyrics_settings_title">Lyrics</string>
     <string name="storage">Storage</string>
+    <string name="download_folder">Download folder</string>
     <string name="cache">Cache</string>
     <string name="image_cache">Image Cache</string>
     <string name="song_cache">Song Cache</string>
@@ -654,6 +656,7 @@ DO NOT PANIC IF IT LOOKS STUCK; sometimes retrieval may take some time.</string>
     <string name="palette_grey">Grey</string>
     <string name="palette_blue_grey">Blue Grey</string>
 
+    <string name="palette_blueberry">Blueberry</string>
     <string name="cd_back">Back</string>
     <string name="cd_pure_black_mode">Pure Black mode</string>
     <string name="cd_light_mode">Light mode</string>

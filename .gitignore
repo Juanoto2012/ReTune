@@ -90,3 +90,4 @@ lint/tmp/
 
 .kotlin
 output-metadata.json
+.keystore

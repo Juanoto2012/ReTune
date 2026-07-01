@@ -19,12 +19,14 @@ cardview = "1.0.0"
 protobuf = "4.34.1"
 animationCore = "1.11.0"
 material = "1.13.0"
+jaudiotagger = "3.0.1"
 
 [libraries]
 lazycolumnscrollbar = { group = "com.github.nanihadesuka", name = "LazyColumnScrollbar", version.ref = "lazycolumnscrollbar" }
 annotation = { module = "androidx.annotation:annotation", version.ref = "annotation" }
 guava = { group = "com.google.guava", name = "guava", version = "33.4.8-android" }
 coroutines-guava = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-guava", version = "1.10.2" }
+coroutines-play-services = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-play-services", version = "1.10.2" }
 concurrent-futures = { group = "androidx.concurrent", name = "concurrent-futures-ktx", version = "1.2.0" }
 
 gradle = { group = "com.android.tools.build", name = "gradle", version.ref = "androidGradlePlugin" }
@@ -97,8 +99,9 @@ firebase-perf-plugin = { module = "com.google.firebase:perf-plugin", version = "
 
 mlkit-language-id = { group = "com.google.mlkit", name = "language-id", version = "17.0.6" }
 mlkit-translate = { group = "com.google.mlkit", name = "translate", version = "17.0.3" }
-newpipe-extractor = { module = "com.github.mostafaalagamy:MetrolistExtractor", version.ref = "extractor" }
+newpipe-extractor = { module = "com.github.MetrolistGroup.MetrolistExtractor:extractor", version.ref = "extractor" }
 cardview = { group = "androidx.cardview", name = "cardview", version.ref = "cardview" }
+documentfile = { group = "androidx.documentfile", name = "documentfile", version = "1.0.1" }
 
 protobuf-javalite = { module = "com.google.protobuf:protobuf-javalite", version.ref = "protobuf" }
 protobuf-kotlin-lite = { module = "com.google.protobuf:protobuf-kotlin-lite", version.ref = "protobuf" }
@@ -106,6 +109,7 @@ protobuf-kotlin-lite = { module = "com.google.protobuf:protobuf-kotlin-lite", ve
 lifecycle-process = { module = "androidx.lifecycle:lifecycle-process", version.ref = "lifecycle" }
 animation-core = { group = "androidx.compose.animation", name = "animation-core", version.ref = "animationCore" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
+jaudiotagger = { group = "com.github.Adonai", name = "jaudiotagger", version = "2.3.14" }
 
 [plugins]
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
