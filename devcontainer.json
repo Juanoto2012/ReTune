@@ -1,0 +1,16 @@
+{
+  "name": "Android Development Environment",
+  "image": "://microsoft.com",
+  "features": {
+    "ghcr.io/devcontainers/features/java:1": {
+      "version": "17",
+      "jdkDistro": "ms"
+    }
+  },
+  "updateContentCommand": "mkdir -p $HOME/android-sdk/cmdline-tools && cd $HOME/android-sdk/cmdline-tools && curl -O https://google.com && unzip *.zip && mv cmdline-tools latest || true",
+  "postCreateCommand": "export ANDROID_HOME=$HOME/android-sdk && export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools && yes | sdkmanager --licenses && sdkmanager \"platform-tools\" \"platforms;android-34\" \"build-tools;34.0.0\"",
+  "remoteEnv": {
+    "ANDROID_HOME": "/home/codespace/android-sdk",
+    "PATH": "${containerEnv:PATH}:/home/codespace/android-sdk/cmdline-tools/latest/bin:/home/codespace/android-sdk/platform-tools"
+  }
+}
