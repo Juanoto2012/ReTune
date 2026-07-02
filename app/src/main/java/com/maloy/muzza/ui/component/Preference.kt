@@ -51,7 +51,7 @@ fun PreferenceEntry(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 4.dp),
-        shape = MaterialTheme.shapes.medium
+        shape = MaterialTheme.shapes.extraLarge
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -124,7 +124,7 @@ fun <T> ListPreference(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 4.dp),
-                    shape = MaterialTheme.shapes.medium
+                    shape = MaterialTheme.shapes.extraLarge
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,

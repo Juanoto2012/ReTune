@@ -81,8 +81,6 @@ import com.maloy.muzza.viewmodels.CachePlaylistViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-import com.maloy.muzza.utils.MP3Downloader
-
 @Composable
 fun SongMenu(
     originalSong: Song,
@@ -549,25 +547,6 @@ fun SongMenu(
                     )
                 }
             )
-            item {
-                HorizontalDivider()
-            }
-            ListMenuItem(
-                icon = R.drawable.download,
-                title = R.string.download_as_mp3
-            ) {
-                onDismiss()
-                coroutineScope.launch {
-                    MP3Downloader.downloadSongAsMP3(
-                        context = context,
-                        videoId = song.id,
-                        title = song.song.title,
-                        artist = song.artists.joinToString { it.name },
-                        album = song.song.albumName,
-                        thumbnailUrl = song.song.thumbnailUrl
-                    )
-                }
-            }
             item {
                 HorizontalDivider()
             }

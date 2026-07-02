@@ -75,7 +75,7 @@ fun DefaultDialog(
     ) {
         Surface(
             modifier = Modifier.padding(24.dp),
-            shape = AlertDialogDefaults.shape,
+            shape = RoundedCornerShape(DialogCornerRadius),
             color = AlertDialogDefaults.containerColor,
             tonalElevation = AlertDialogDefaults.TonalElevation
         ) {
@@ -143,7 +143,7 @@ fun ListDialog(
     ) {
         Surface(
             modifier = Modifier.padding(24.dp),
-            shape = AlertDialogDefaults.shape,
+            shape = RoundedCornerShape(DialogCornerRadius),
             color = AlertDialogDefaults.containerColor,
             tonalElevation = AlertDialogDefaults.TonalElevation
         ) {

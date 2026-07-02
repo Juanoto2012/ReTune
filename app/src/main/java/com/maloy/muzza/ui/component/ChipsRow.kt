@@ -41,7 +41,7 @@ fun <E> ChipsRow(
                     containerColor = containerColor,
                 ),
                 onClick = { onValueUpdate(value) },
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(24.dp),
                 border = null
             )
 

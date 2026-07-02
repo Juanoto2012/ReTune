@@ -69,8 +69,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 
-import com.maloy.muzza.utils.MP3Downloader
-
 @Composable
 fun MediaMetadataMenu(
     mediaMetadata: MediaMetadata,
@@ -431,25 +429,6 @@ fun MediaMetadataMenu(
                     )
                 }
             )
-            item {
-                HorizontalDivider()
-            }
-            ListMenuItem(
-                icon = R.drawable.download,
-                title = R.string.download_as_mp3
-            ) {
-                onDismiss()
-                coroutineScope.launch {
-                    MP3Downloader.downloadSongAsMP3(
-                        context = context,
-                        videoId = mediaMetadata.id,
-                        title = mediaMetadata.title,
-                        artist = mediaMetadata.artists.joinToString { it.name },
-                        album = mediaMetadata.album?.title,
-                        thumbnailUrl = mediaMetadata.thumbnailUrl
-                    )
-                }
-            }
             item {
                 HorizontalDivider()
             }

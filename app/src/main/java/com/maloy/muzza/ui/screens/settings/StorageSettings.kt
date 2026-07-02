@@ -73,12 +73,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-import android.content.Intent
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import android.net.Uri
 import com.maloy.muzza.constants.DownloadFolderKey
-import androidx.compose.material.icons.rounded.FolderOpen
+import com.maloy.muzza.constants.UseExternalStorageKey
+import androidx.compose.material.icons.rounded.SdCard
+import androidx.compose.material.icons.rounded.Storage
 import androidx.compose.foundation.clickable
 import androidx.compose.ui.draw.clip
 
@@ -103,20 +101,13 @@ fun StorageSettings(
         key = MaxSongCacheSizeKey,
         defaultValue = 1024
     )
-    val (downloadFolder, onDownloadFolderChange) = rememberPreference(
-        key = DownloadFolderKey,
-        defaultValue = ""
+    val (useExternalStorage, onUseExternalStorageChange) = rememberPreference(
+        key = UseExternalStorageKey,
+        defaultValue = false
     )
 
-    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
-        if (uri != null) {
-            context.contentResolver.takePersistableUriPermission(
-                uri,
-                Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-            )
-            onDownloadFolderChange(uri.toString())
-        }
-    }
+    val externalFilesDirs = context.getExternalFilesDirs(null)
+    val hasSdCard = externalFilesDirs.size > 1 && externalFilesDirs[1] != null
 
     var imageCacheSize by remember { mutableLongStateOf(imageDiskCache.size) }
     var playerCacheSize by remember { mutableLongStateOf(tryOrNull { playerCache.cacheSpace } ?: 0) }
@@ -188,29 +179,45 @@ fun StorageSettings(
         ) {
             item {
                 StorageCategoryHeader(
-                    title = stringResource(R.string.download_folder),
-                    icon = Icons.Rounded.FolderOpen,
+                    title = stringResource(R.string.storage),
+                    icon = if (useExternalStorage && hasSdCard) Icons.Rounded.SdCard else Icons.Rounded.Storage,
                     color = MaterialTheme.colorScheme.surfaceContainer
                 )
                 Card(
                     modifier = Modifier
                         .padding(horizontal = 16.dp, vertical = 8.dp)
                         .clip(MaterialTheme.shapes.medium)
-                        .clickable { launcher.launch(null) },
+                        .clickable {
+                            if (hasSdCard) {
+                                onUseExternalStorageChange(!useExternalStorage)
+                            }
+                        },
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text(
-                            text = if (downloadFolder.isEmpty()) stringResource(R.string.off) 
-                            else Uri.decode(Uri.parse(downloadFolder).lastPathSegment?.replace("primary:", "") ?: downloadFolder),
-                            style = MaterialTheme.typography.bodyMedium,
+                            text = if (useExternalStorage && hasSdCard) "SD Card (External)" else "Internal Storage",
+                            style = MaterialTheme.typography.titleMedium,
+                        )
+                        Text(
+                            text = if (hasSdCard) "Tap to switch storage location" else "No SD Card detected",
+                            style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = stringResource(R.string.edit),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.primary
-                        )
+                        if (useExternalStorage && hasSdCard) {
+                             Text(
+                                text = externalFilesDirs[1].absolutePath,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(top = 4.dp)
+                            )
+                        } else {
+                            Text(
+                                text = context.filesDir.absolutePath,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(top = 4.dp)
+                            )
+                        }
                     }
                 }
             }

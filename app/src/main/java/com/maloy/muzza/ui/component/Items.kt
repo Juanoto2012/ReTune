@@ -158,8 +158,8 @@ inline fun ListItem(
         modifier = if (isActive)
             modifier
                 .height(ListItemHeight)
-                .padding(horizontal = 8.dp)
-                .clip(RoundedCornerShape(8.dp))
+                .padding(horizontal = 8.dp, vertical = 4.dp)
+                .clip(RoundedCornerShape(24.dp))
                 .background(color = MaterialTheme.colorScheme.secondaryContainer)
         else
             modifier
@@ -1203,9 +1203,9 @@ fun YouTubeCardItem(
         modifier = modifier
             .height(60.dp)
             .width((screenWidthDp.dp - 12.dp) / 2)
-            .padding(6.dp)
-            .clip(RoundedCornerShape(6.dp))
-            .background(MaterialTheme.colorScheme.surfaceColorAtElevation(6.dp))
+            .padding(4.dp)
+            .clip(RoundedCornerShape(20.dp))
+            .background(MaterialTheme.colorScheme.surfaceColorAtElevation(4.dp))
             .clickable(onClick = onClick)
     ) {
         Box(
@@ -1381,7 +1381,7 @@ fun CommunityPlaylistCard(
                             .fillMaxSize()
                             .background(
                                 color = Color.Black.copy(alpha = 0.5f),
-                                shape = RoundedCornerShape(12.dp)
+                                shape = RoundedCornerShape(20.dp)
                             )
                     )
                 }
@@ -1419,7 +1419,7 @@ fun CommunityPlaylistCard(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 4.dp)
-                            .clip(RoundedCornerShape(12.dp))
+                            .clip(RoundedCornerShape(24.dp))
                             .combinedClickable(
                                 onClick = {
                                     if (!isListenTogetherGuest) {
@@ -1447,7 +1447,7 @@ fun CommunityPlaylistCard(
                         Box(
                             modifier = Modifier
                                 .size(56.dp)
-                                .clip(RoundedCornerShape(12.dp))
+                                .clip(RoundedCornerShape(16.dp))
                         ) {
                             AsyncImage(
                                 model = song.thumbnail.replace(Regex("w\\d+-h\\d+"), "w120-h120"),

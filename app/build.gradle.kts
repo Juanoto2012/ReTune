@@ -28,8 +28,8 @@ android {
         applicationId = "com.jntx.retune"
         minSdk = 24
         targetSdk = 36
-        versionCode = 47
-        versionName = "0.7.5"
+        versionCode = 49
+        versionName = "0.8.1"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     buildTypes {

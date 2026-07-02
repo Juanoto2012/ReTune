@@ -79,8 +79,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 
-import com.maloy.muzza.utils.MP3Downloader
-
 @Composable
 fun YouTubeSongMenu(
     song: SongItem,
@@ -425,25 +423,6 @@ fun YouTubeSongMenu(
                 )
             }
         )
-        item {
-            HorizontalDivider()
-        }
-        ListMenuItem(
-            icon = R.drawable.download,
-            title = R.string.download_as_mp3
-        ) {
-            onDismiss()
-            coroutineScope.launch {
-                MP3Downloader.downloadSongAsMP3(
-                    context = context,
-                    videoId = song.id,
-                    title = song.title,
-                    artist = song.artists.joinToString { it.name },
-                    album = song.album?.name,
-                    thumbnailUrl = song.thumbnail
-                )
-            }
-        }
         item {
             HorizontalDivider()
         }

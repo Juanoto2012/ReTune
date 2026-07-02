@@ -6,6 +6,8 @@ import androidx.media3.database.StandaloneDatabaseProvider
 import androidx.media3.datasource.cache.LeastRecentlyUsedCacheEvictor
 import androidx.media3.datasource.cache.NoOpCacheEvictor
 import androidx.media3.datasource.cache.SimpleCache
+import com.maloy.muzza.constants.DownloadFolderKey
+import com.maloy.muzza.constants.UseExternalStorageKey
 import com.maloy.muzza.constants.MaxSongCacheSizeKey
 import com.maloy.muzza.db.InternalDatabase
 import com.maloy.muzza.db.MusicDatabase
@@ -79,8 +81,17 @@ object AppModule {
     @Provides
     @DownloadCache
     fun provideDownloadCache(@ApplicationContext context: Context, databaseProvider: DatabaseProvider): SimpleCache {
+        val useExternal = context.dataStore[UseExternalStorageKey] ?: false
+        val externalDirs = context.getExternalFilesDirs(null)
+        val baseDir = if (useExternal && externalDirs.size > 1 && externalDirs[1] != null) {
+            externalDirs[1]
+        } else {
+            context.filesDir
+        }
+        val downloadDir = baseDir.resolve("download")
+        
         val constructor = {
-            SimpleCache(context.filesDir.resolve("download"), NoOpCacheEvictor(), databaseProvider)
+            SimpleCache(downloadDir, NoOpCacheEvictor(), databaseProvider)
         }
         constructor().release()
         return constructor()

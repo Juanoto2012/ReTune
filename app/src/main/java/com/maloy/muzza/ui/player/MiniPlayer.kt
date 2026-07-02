@@ -104,7 +104,13 @@ fun MiniPlayer(
         Box(
             modifier = modifier
                 .fillMaxWidth()
-                .height(MiniPlayerHeight)
+                .padding(horizontal = 12.dp, vertical = 8.dp)
+                .height(MiniPlayerHeight - 4.dp)
+                .background(
+                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    shape = RoundedCornerShape(28.dp)
+                )
+                .clip(RoundedCornerShape(28.dp))
                 .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Horizontal))
                 .pointerInput(isListenTogetherGuest, Unit) {
                     detectHorizontalDragGestures(
@@ -148,8 +154,11 @@ fun MiniPlayer(
                 progress = { (position.toFloat() / duration).coerceIn(0f, 1f) },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(3.dp)
-                    .align(Alignment.BottomCenter),
+                    .height(2.dp)
+                    .align(Alignment.BottomCenter)
+                    .padding(horizontal = 16.dp),
+                color = MaterialTheme.colorScheme.primary,
+                trackColor = Color.Transparent
             )
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -245,8 +254,11 @@ fun MiniPlayer(
                 progress = { (position.toFloat() / duration).coerceIn(0f, 1f) },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(3.dp)
-                    .align(Alignment.BottomCenter),
+                    .height(2.dp)
+                    .align(Alignment.BottomCenter)
+                    .padding(horizontal = 16.dp),
+                color = MaterialTheme.colorScheme.primary,
+                trackColor = Color.Transparent
             )
             Row(
                 verticalAlignment = Alignment.CenterVertically,

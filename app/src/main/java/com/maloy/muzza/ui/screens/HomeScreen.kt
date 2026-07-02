@@ -977,7 +977,7 @@ fun HomeScreen(
                                 {
                                     val shape =
                                         if (it.title is Artist) CircleShape else RoundedCornerShape(
-                                            ThumbnailCornerRadius
+                                            24.dp
                                         )
                                     AsyncImage(
                                         model = thumbnailUrl,
@@ -1035,7 +1035,7 @@ fun HomeScreen(
                             {
                                 val shape =
                                     if (section.endpoint?.isArtistEndpoint == true) CircleShape
-                                    else RoundedCornerShape(ThumbnailCornerRadius)
+                                    else RoundedCornerShape(24.dp)
                                 AsyncImage(
                                     model = thumbnailUrl,
                                     contentDescription = null,
