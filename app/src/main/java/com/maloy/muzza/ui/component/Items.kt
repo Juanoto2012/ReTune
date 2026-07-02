@@ -372,7 +372,7 @@ fun SongListItem(
                                 contentScale = contentScale,
                                 modifier = Modifier
                                     .size(ListThumbnailSize)
-                                    .clip(RoundedCornerShape(ThumbnailCornerRadius))
+                                    .clip(RoundedCornerShape(25))
                             )
                             PlayingIndicatorBox(
                                 isActive = isActive,
@@ -382,7 +382,7 @@ fun SongListItem(
                                     .size(ListThumbnailSize)
                                     .background(
                                         color = Color.Black.copy(alpha = ActiveBoxAlpha),
-                                        shape = RoundedCornerShape(ThumbnailCornerRadius)
+                                        shape = RoundedCornerShape(25)
                                     )
                             )
                         }
@@ -393,10 +393,10 @@ fun SongListItem(
                             albumIndex = albumIndex,
                             isActive = isActive,
                             isPlaying = isPlaying,
-                            shape = RoundedCornerShape(ThumbnailCornerRadius),
+                            shape = RoundedCornerShape(25),
                             modifier = Modifier
                                 .size(ListThumbnailSize)
-                                .clip(RoundedCornerShape(ThumbnailCornerRadius))
+                                .clip(RoundedCornerShape(25))
                         )
                     }
                 },
@@ -470,7 +470,7 @@ fun SongGridItem(
                     contentScale = contentScale,
                     modifier = Modifier
                         .size(GridThumbnailHeight)
-                        .clip(RoundedCornerShape(ThumbnailCornerRadius))
+                        .clip(RoundedCornerShape(25))
                 )
                 PlayingIndicatorBox(
                     isActive = isActive,
@@ -480,7 +480,7 @@ fun SongGridItem(
                         .fillMaxSize()
                         .background(
                             color = Color.Black.copy(alpha = ActiveBoxAlpha),
-                            shape = RoundedCornerShape(ThumbnailCornerRadius)
+                            shape = RoundedCornerShape(25)
                         )
                 )
             }
@@ -490,10 +490,10 @@ fun SongGridItem(
                 thumbnailUrl = song.song.thumbnailUrl,
                 isActive = isActive,
                 isPlaying = isPlaying,
-                shape = RoundedCornerShape(ThumbnailCornerRadius),
+                shape = RoundedCornerShape(25),
                 modifier = Modifier
                     .size(GridThumbnailHeight)
-                    .clip(RoundedCornerShape(ThumbnailCornerRadius))
+                    .clip(RoundedCornerShape(25))
             )
         }
         ItemsPlayButton(
@@ -655,7 +655,7 @@ fun AlbumListItem(
             thumbnailUrl = album.album.thumbnailUrl,
             isActive = isActive,
             isPlaying = isPlaying,
-            shape = RoundedCornerShape(ThumbnailCornerRadius),
+            shape = RoundedCornerShape(25),
             modifier = Modifier.size(ListThumbnailSize)
         )
     },
@@ -728,7 +728,7 @@ fun AlbumGridItem(
             thumbnailUrl = album.album.thumbnailUrl,
             isActive = isActive,
             isPlaying = isPlaying,
-            shape = RoundedCornerShape(ThumbnailCornerRadius),
+            shape = RoundedCornerShape(25),
         )
 
         ItemsPlayButton(
@@ -776,7 +776,7 @@ fun AutoPlaylistListItem(
             Box(
                 modifier = Modifier
                     .size(ListThumbnailSize)
-                    .clip(RoundedCornerShape(ThumbnailCornerRadius))
+                    .clip(RoundedCornerShape(25))
                     .background(MaterialTheme.colorScheme.surfaceContainer),
                 contentAlignment = Alignment.Center
             ) {
@@ -799,7 +799,7 @@ fun AutoPlaylistListItem(
                                     Box(
                                         modifier = Modifier
                                             .size(ListThumbnailSize)
-                                            .clip(RoundedCornerShape(ThumbnailCornerRadius))
+                                            .clip(RoundedCornerShape(25))
                                             .background(MaterialTheme.colorScheme.surfaceVariant)
                                     ) {
                                         Icon(
@@ -812,11 +812,11 @@ fun AutoPlaylistListItem(
                                         )
                                     }
                                 },
-                                shape = RoundedCornerShape(ThumbnailCornerRadius)
+                                shape = RoundedCornerShape(25)
                             )
                         }
                     },
-                    shape = RoundedCornerShape(ThumbnailCornerRadius)
+                    shape = RoundedCornerShape(25)
                 )
             }
         },
@@ -901,7 +901,7 @@ fun PlaylistListItem(
             Box(
                 modifier = Modifier
                     .size(ListThumbnailSize)
-                    .clip(RoundedCornerShape(ThumbnailCornerRadius))
+                    .clip(RoundedCornerShape(25))
                     .background(MaterialTheme.colorScheme.surfaceContainer),
                 contentAlignment = Alignment.Center
             ) {
@@ -920,7 +920,7 @@ fun PlaylistListItem(
                             Box(
                                 modifier = Modifier
                                     .size(ListThumbnailSize)
-                                    .clip(RoundedCornerShape(ThumbnailCornerRadius))
+                                    .clip(RoundedCornerShape(25))
                                     .background(MaterialTheme.colorScheme.surfaceVariant)
                             ) {
                                 Icon(
@@ -933,7 +933,7 @@ fun PlaylistListItem(
                                 )
                             }
                         },
-                        shape = RoundedCornerShape(ThumbnailCornerRadius)
+                        shape = RoundedCornerShape(25)
                     )
                 }
                 PlayingIndicatorBox(
@@ -944,7 +944,7 @@ fun PlaylistListItem(
                         .size(ListThumbnailSize)
                         .background(
                             color = Color.Black.copy(alpha = ActiveBoxAlpha),
-                            shape = RoundedCornerShape(ThumbnailCornerRadius)
+                            shape = RoundedCornerShape(25)
                         )
                 )
             }
@@ -1038,7 +1038,7 @@ fun PlaylistGridItem(
             Box(
                 modifier = Modifier
                     .size(width)
-                    .clip(RoundedCornerShape(ThumbnailCornerRadius))
+                    .clip(RoundedCornerShape(25))
                     .background(MaterialTheme.colorScheme.surfaceContainer)
             ) {
                 if (customThumbnailUri != null) {
@@ -1062,7 +1062,7 @@ fun PlaylistGridItem(
                                     .align(Alignment.Center)
                             )
                         },
-                        shape = RoundedCornerShape(ThumbnailCornerRadius)
+                        shape = RoundedCornerShape(25)
                     )
                 }
                 PlayingIndicatorBox(
@@ -1073,7 +1073,7 @@ fun PlaylistGridItem(
                         .fillMaxSize()
                         .background(
                             color = Color.Black.copy(alpha = ActiveBoxAlpha),
-                            shape = RoundedCornerShape(ThumbnailCornerRadius)
+                            shape = RoundedCornerShape(25)
                         )
                 )
             }
@@ -1153,7 +1153,7 @@ fun MediaMetadataListItem(
                         contentScale = contentScale,
                         modifier = Modifier
                             .size(ListThumbnailSize)
-                            .clip(RoundedCornerShape(ThumbnailCornerRadius))
+                            .clip(RoundedCornerShape(25))
                     )
                     PlayingIndicatorBox(
                         isActive = isActive,
@@ -1164,7 +1164,7 @@ fun MediaMetadataListItem(
                             .align(alignment = Alignment.Center)
                             .background(
                                 color = Color.Black.copy(alpha = ActiveBoxAlpha),
-                                shape = RoundedCornerShape(ThumbnailCornerRadius)
+                                shape = RoundedCornerShape(25)
                             )
                     )
                 }
@@ -1174,7 +1174,7 @@ fun MediaMetadataListItem(
                     videoThumbnailSize = false,
                     isActive = isActive,
                     isPlaying = isPlaying,
-                    shape = RoundedCornerShape(ThumbnailCornerRadius),
+                    shape = RoundedCornerShape(25),
                     modifier = Modifier.size(ListThumbnailSize)
                 )
             }

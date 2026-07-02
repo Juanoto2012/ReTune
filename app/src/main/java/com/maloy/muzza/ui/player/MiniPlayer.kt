@@ -22,6 +22,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -150,16 +152,6 @@ fun MiniPlayer(
                     )
                 }
         ) {
-            LinearProgressIndicator(
-                progress = { (position.toFloat() / duration).coerceIn(0f, 1f) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(2.dp)
-                    .align(Alignment.BottomCenter)
-                    .padding(horizontal = 16.dp),
-                color = MaterialTheme.colorScheme.primary,
-                trackColor = Color.Transparent
-            )
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
@@ -172,6 +164,8 @@ fun MiniPlayer(
                         MiniMediaInfo(
                             mediaMetadata = it,
                             error = error,
+                            position = position,
+                            duration = duration,
                             modifier = Modifier.padding(horizontal = 6.dp)
                         )
                     }
@@ -347,12 +341,25 @@ fun MiniMediaInfo(
     error: PlaybackException?,
     modifier: Modifier = Modifier,
     contentScale: ContentScale = ContentScale.Fit,
+    position: Long = 0,
+    duration: Long = 1,
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
     ) {
-        Box(modifier = Modifier.padding(6.dp)) {
+        Box(
+            modifier = Modifier.padding(6.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator(
+                progress = { (position.toFloat() / duration).coerceIn(0f, 1f) },
+                modifier = Modifier.size(54.dp),
+                strokeWidth = 2.dp,
+                color = MaterialTheme.colorScheme.primary,
+                trackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+            )
+            
             if (mediaMetadata.isLocal) {
                 mediaMetadata.let {
                     AsyncLocalImage(
@@ -360,9 +367,9 @@ fun MiniMediaInfo(
                         contentDescription = null,
                         contentScale = contentScale,
                         modifier = Modifier
-                            .size(48.dp)
+                            .size(44.dp)
                             .aspectRatio(1f)
-                            .clip(RoundedCornerShape(ThumbnailCornerRadius))
+                            .clip(CircleShape)
                     )
                 }
             } else {
@@ -371,9 +378,9 @@ fun MiniMediaInfo(
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
-                        .size(48.dp)
+                        .size(44.dp)
                         .aspectRatio(1f)
-                        .clip(RoundedCornerShape(ThumbnailCornerRadius))
+                        .clip(CircleShape)
                 )
             }
             androidx.compose.animation.AnimatedVisibility(
@@ -383,10 +390,10 @@ fun MiniMediaInfo(
             ) {
                 Box(
                     Modifier
-                        .size(48.dp)
+                        .size(44.dp)
                         .background(
                             color = Color.Black.copy(alpha = 0.6f),
-                            shape = RoundedCornerShape(ThumbnailCornerRadius)
+                            shape = CircleShape
                         )
                 ) {
                     Icon(

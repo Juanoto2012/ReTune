@@ -764,30 +764,44 @@ class MainActivity : ComponentActivity() {
                                 },
                                 actions = {
                                     IconButton(
-                                        content = {
-                                            BadgedBox(
-                                                badge = {
-                                                }
-                                            ) {
-                                                if (isLoggedIn && accountImageUrl.isNotEmpty()) {
-                                                    AsyncImage(
-                                                        model = (accountImageUrl),
-                                                        contentDescription = null,
-                                                        contentScale = ContentScale.Crop,
-                                                        modifier = Modifier
-                                                            .size(30.dp)
-                                                            .clip(CircleShape)
-                                                    )
-                                                } else {
-                                                    Icon(
-                                                        painterResource(R.drawable.menu),
-                                                        null
-                                                    )
-                                                }
+                                        onClick = {
+                                            showOptionsDropdown = !showOptionsDropdown
+                                        },
+                                        onLongClick = {
+                                            showOptionsDropdown = !showOptionsDropdown
+                                        }
+                                    ) {
+                                        BadgedBox(
+                                            badge = {
                                             }
+                                        ) {
+                                            if (isLoggedIn && accountImageUrl.isNotEmpty()) {
+                                                AsyncImage(
+                                                    model = (accountImageUrl),
+                                                    contentDescription = null,
+                                                    contentScale = ContentScale.Crop,
+                                                    modifier = Modifier
+                                                        .size(30.dp)
+                                                        .clip(CircleShape)
+                                                )
+                                            } else {
+                                                Icon(
+                                                    painter = painterResource(R.drawable.more_vert),
+                                                    contentDescription = null
+                                                )
+                                            }
+                                        }
+                                        MaterialTheme(
+                                            shapes = MaterialTheme.shapes.copy(extraSmall = RoundedCornerShape(24.dp))
+                                        ) {
                                             DropdownMenu(
                                                 expanded = showOptionsDropdown,
                                                 onDismissRequest = { showOptionsDropdown = false },
+                                                shape = RoundedCornerShape(24.dp),
+                                                modifier = Modifier.background(
+                                                    MaterialTheme.colorScheme.surfaceContainerHigh,
+                                                    RoundedCornerShape(24.dp)
+                                                )
                                             ) {
                                                 DropdownMenuItem(
                                                     leadingIcon = {
@@ -840,11 +854,8 @@ class MainActivity : ComponentActivity() {
                                                     }
                                                 )
                                             }
-                                        },
-                                        onClick = {
-                                            showOptionsDropdown = !showOptionsDropdown
-                                        },
-                                    )
+                                        }
+                                    }
                                 },
                                 scrollBehavior = searchBarScrollBehavior
                             )
