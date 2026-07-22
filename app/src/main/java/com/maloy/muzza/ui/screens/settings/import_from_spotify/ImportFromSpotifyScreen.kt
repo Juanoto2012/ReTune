@@ -57,14 +57,16 @@ fun ImportFromSpotifyScreen(
     var clientId by rememberSaveable { mutableStateOf("") }
     var clientSecret by rememberSaveable { mutableStateOf("") }
     var authCode by rememberSaveable { mutableStateOf("") }
-    var showInstructions by rememberSaveable { mutableStateOf(false) }
+    var showAdvanced by rememberSaveable { mutableStateOf(false) }
 
     val spotifyLoginLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
         if (result.resultCode == android.app.Activity.RESULT_OK) {
             val spDc = result.data?.getStringExtra("SP_DC")
-            if (spDc != null) viewModel.fetchPlaylistsWithSpDc(spDc)
+            if (spDc != null) {
+                viewModel.fetchPlaylistsWithSpDc(spDc)
+            }
         }
     }
 
@@ -83,7 +85,7 @@ fun ImportFromSpotifyScreen(
     ) { padding ->
         Box(modifier = Modifier.padding(padding).fillMaxSize()) {
             if (state.isObtainingAccessTokenSuccessful) {
-                // Pantalla de selección de Playlists (Post-Login)
+                // PANTALLA POST-LOGIN (Lista de Playlists)
                 Column(modifier = Modifier.fillMaxSize()) {
                     Card(
                         modifier = Modifier.fillMaxWidth().padding(16.dp),
@@ -159,116 +161,131 @@ fun ImportFromSpotifyScreen(
                 }
 
             } else {
-                // Pantalla de Login (Estilo Vivi/Material You)
+                // PANTALLA DE LOGIN
                 Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp)) {
                     Icon(
                         painter = painterResource(R.drawable.spotify),
                         contentDescription = null,
-                        modifier = Modifier.size(64.dp).align(Alignment.CenterHorizontally),
+                        modifier = Modifier.size(80.dp).align(Alignment.CenterHorizontally),
                         tint = Color(0xFF1DB954)
                     )
                     Spacer(Modifier.height(16.dp))
-                    Text("Connect to Spotify", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
-                    Text("The old reliable way is back.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
+                    Text("Connect Spotify", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
+                    Text("Transfer your music from Spotify", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
                     
                     Spacer(Modifier.height(32.dp))
 
-                    OutlinedTextField(
-                        value = clientId,
-                        onValueChange = { clientId = it },
-                        label = { Text("Client ID") },
+                    // MÉTODO RÁPIDO
+                    Card(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp),
-                        singleLine = true,
-                        leadingIcon = { Icon(Icons.Rounded.Key, null) }
-                    )
-                    Spacer(Modifier.height(12.dp))
-                    OutlinedTextField(
-                        value = clientSecret,
-                        onValueChange = { clientSecret = it },
-                        label = { Text("Client Secret") },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp),
-                        singleLine = true,
-                        leadingIcon = { Icon(Icons.Rounded.Lock, null) }
-                    )
-                    
-                    Spacer(Modifier.height(24.dp))
-                    
-                    Button(
-                        onClick = { uriHandler.openUri("https://accounts.spotify.com/authorize?client_id=${clientId.trim()}&response_type=code&redirect_uri=http://127.0.0.1:45454&scope=user-library-read%20playlist-read-private") },
-                        modifier = Modifier.fillMaxWidth().height(50.dp),
-                        shape = RoundedCornerShape(16.dp),
-                        enabled = clientId.isNotBlank(),
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondaryContainer, contentColor = MaterialTheme.colorScheme.onSecondaryContainer)
+                        shape = RoundedCornerShape(24.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFF1DB954).copy(alpha = 0.1f))
                     ) {
-                        Text("1. Get Auth Code")
+                        Column(Modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("Fast Login", style = MaterialTheme.typography.labelLarge, color = Color(0xFF1DB954))
+                            Spacer(Modifier.height(12.dp))
+                            Button(
+                                onClick = {
+                                    val intent = Intent(context, SpotifyLoginActivity::class.java)
+                                    spotifyLoginLauncher.launch(intent)
+                                },
+                                modifier = Modifier.fillMaxWidth().height(56.dp),
+                                shape = RoundedCornerShape(28.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1DB954))
+                            ) {
+                                Text("Login with Spotify", fontWeight = FontWeight.Bold, color = Color.White)
+                            }
+                            Spacer(Modifier.height(8.dp))
+                            Text("No Client ID needed. Just log in.", style = MaterialTheme.typography.bodySmall)
+                        }
                     }
 
-                    Spacer(Modifier.height(12.dp))
+                    Spacer(Modifier.height(32.dp))
 
-                    OutlinedTextField(
-                        value = authCode,
-                        onValueChange = { authCode = it.substringAfter("code=").substringBefore("&").trim() },
-                        label = { Text("Paste URL or Code here") },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp),
-                        placeholder = { Text("http://127.0.0.1:45454/?code=...") }
-                    )
-
-                    Spacer(Modifier.height(24.dp))
-
-                    Button(
-                        onClick = { viewModel.loginWithCredentials(clientId.trim(), clientSecret.trim(), authCode.trim()) },
-                        modifier = Modifier.fillMaxWidth().height(56.dp),
-                        shape = RoundedCornerShape(28.dp),
-                        enabled = clientId.isNotBlank() && clientSecret.isNotBlank() && authCode.isNotBlank()
-                    ) {
-                        Text("2. Connect & Sync", fontWeight = FontWeight.Bold)
-                    }
-
-                    Spacer(Modifier.height(16.dp))
-                    
+                    // MÉTODO TRADICIONAL
                     TextButton(
-                        onClick = { showInstructions = !showInstructions },
+                        onClick = { showAdvanced = !showAdvanced },
                         modifier = Modifier.align(Alignment.CenterHorizontally)
                     ) {
-                        Icon(if (showInstructions) Icons.Rounded.ExpandLess else Icons.Rounded.Help, null)
-                        Spacer(Modifier.width(8.dp))
-                        Text("Need help getting credentials?")
+                        Text(if (showAdvanced) "Hide Advanced Login" else "Use API Credentials (Personal App)")
+                        Icon(if (showAdvanced) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore, null)
                     }
 
-                    AnimatedVisibility(showInstructions) {
-                        Card(
-                            modifier = Modifier.padding(top = 16.dp),
-                            shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-                        ) {
-                            Column(Modifier.padding(16.dp)) {
-                                Text("1. Go to Spotify Developer Dashboard", fontWeight = FontWeight.Bold)
-                                Text("2. Create an App, set Redirect URI to http://127.0.0.1:45454", fontSize = 14.sp)
-                                Text("3. Copy Client ID and Secret to the fields above", fontSize = 14.sp)
+                    AnimatedVisibility(showAdvanced) {
+                        Column {
+                            Text(
+                                "Note: Each user needs to create their own app in the Spotify Dashboard.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(bottom = 16.dp)
+                            )
+                            OutlinedTextField(
+                                value = clientId,
+                                onValueChange = { clientId = it },
+                                label = { Text("Client ID") },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(16.dp)
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            OutlinedTextField(
+                                value = clientSecret,
+                                onValueChange = { clientSecret = it },
+                                label = { Text("Client Secret") },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(16.dp)
+                            )
+                            Spacer(Modifier.height(12.dp))
+                            Button(
+                                onClick = { uriHandler.openUri("https://accounts.spotify.com/authorize?client_id=${clientId.trim()}&response_type=code&redirect_uri=http://127.0.0.1:45454&scope=user-library-read%20playlist-read-private") },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(16.dp),
+                                enabled = clientId.isNotBlank(),
+                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant, contentColor = MaterialTheme.colorScheme.onSurfaceVariant)
+                            ) {
+                                Text("1. Get Auth Code")
+                            }
+                            Spacer(Modifier.height(8.dp))
+                            OutlinedTextField(
+                                value = authCode,
+                                onValueChange = { authCode = it.substringAfter("code=").substringBefore("&").trim() },
+                                label = { Text("URL / Code") },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(16.dp)
+                            )
+                            Spacer(Modifier.height(12.dp))
+                            Button(
+                                onClick = { viewModel.loginWithCredentials(clientId.trim(), clientSecret.trim(), authCode.trim()) },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(16.dp),
+                                enabled = clientId.isNotBlank() && clientSecret.isNotBlank() && authCode.isNotBlank()
+                            ) {
+                                Text("2. Sync with Keys")
                             }
                         }
                     }
                 }
             }
 
-            // Overlay de Progreso (Vivi Style)
+            // OVERLAY DE IMPORTACIÓN
             if (viewModel.isImportingInProgress.value) {
-                Surface(modifier = Modifier.fillMaxSize(), color = Color.Black.copy(alpha = 0.8f)) {
+                Surface(modifier = Modifier.fillMaxSize(), color = Color.Black.copy(alpha = 0.85f)) {
                     Column(
                         modifier = Modifier.fillMaxSize().padding(32.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
-                        CircularProgressIndicator(color = Color.White, strokeWidth = 4.dp)
+                        CircularProgressIndicator(color = Color(0xFF1DB954), strokeWidth = 6.dp, modifier = Modifier.size(64.dp))
+                        Spacer(Modifier.height(32.dp))
+                        Text("Syncing your library...", color = Color.White, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                        Spacer(Modifier.height(8.dp))
+                        Text("Don't close the app", color = Color.White.copy(alpha = 0.6f))
                         Spacer(Modifier.height(24.dp))
-                        Text("Importing your library...", color = Color.White, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                        Spacer(Modifier.height(16.dp))
-                        LazyColumn(modifier = Modifier.heightIn(max = 200.dp)) {
-                            items(viewModel.importLogs) { log ->
-                                Text(log, color = Color.White.copy(alpha = 0.7f), fontSize = 12.sp, textAlign = TextAlign.Center)
+                        
+                        Box(Modifier.fillMaxWidth().height(150.dp).background(Color.White.copy(alpha = 0.05f), RoundedCornerShape(16.dp)).padding(12.dp)) {
+                            LazyColumn(reverseLayout = true) {
+                                items(viewModel.importLogs.asReversed()) { log ->
+                                    Text(log, color = Color.LightGray, fontSize = 11.sp, modifier = Modifier.padding(vertical = 2.dp))
+                                }
                             }
                         }
                     }
@@ -279,7 +296,13 @@ fun ImportFromSpotifyScreen(
 
     LaunchedEffect(viewModel.isImportingCompleted.value) {
         if (viewModel.isImportingCompleted.value) {
-            Toast.makeText(context, "Import Succeeded! Welcome to ReTune", Toast.LENGTH_LONG).show()
+            Toast.makeText(context, "Import successful!", Toast.LENGTH_LONG).show()
+            navController.navigateUp()
+        }
+    }
+    
+    BackHandler {
+        if (!viewModel.isImportingInProgress.value) {
             navController.navigateUp()
         }
     }

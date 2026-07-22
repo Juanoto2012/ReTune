@@ -18,6 +18,7 @@ import com.maloy.muzza.ui.screens.settings.import_from_spotify.model.ImportProgr
 import com.maloy.muzza.ui.screens.settings.import_from_spotify.model.Playlist
 import com.maloy.innertube.YouTube
 import com.maloy.innertube.models.SongItem
+import com.maloy.muzza.models.toMediaMetadata
 import com.maloy.muzza.ui.utils.toHighResThumbnail
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -33,6 +34,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import timber.log.Timber
+import java.time.LocalDateTime
 import java.util.concurrent.atomic.AtomicInteger
 import javax.inject.Inject
 
@@ -181,7 +183,11 @@ class ImportFromSpotifyViewModel @Inject constructor(
         selectedPlaylists.forEachIndexed { playlistIndex, playlist ->
             var progressedTracksCount = 0
             val generatedPlaylistId = PlaylistEntity.generatePlaylistId()
-            localDatabase.insert(PlaylistEntity(id = generatedPlaylistId, name = playlist.name))
+            localDatabase.insert(PlaylistEntity(
+                id = generatedPlaylistId, 
+                name = playlist.name,
+                bookmarkedAt = LocalDateTime.now()
+            ))
             
             val tracks = getTracksFromAPlaylist(playlist.id, authToken)
             tracks.forEach { trackItem ->
@@ -190,14 +196,13 @@ class ImportFromSpotifyViewModel @Inject constructor(
                     YouTube.search(query, YouTube.SearchFilter.FILTER_SONG).onSuccess { result ->
                         val song = result.items.firstOrNull() as? SongItem ?: return@onSuccess
                         
-                        // Insertar canción y mapeos
-                        localDatabase.insert(SongEntity(
-                            id = song.id,
-                            title = song.title,
-                            thumbnailUrl = song.thumbnail.toHighResThumbnail(),
-                            localPath = null
-                        ))
-                        localDatabase.insert(PlaylistSongMap(playlistId = generatedPlaylistId, songId = song.id))
+                        // Insertar canción con metadatos completos y marcar en la librería
+                        localDatabase.transaction {
+                            insert(song.toMediaMetadata()) {
+                                it.copy(inLibrary = LocalDateTime.now())
+                            }
+                            insert(PlaylistSongMap(playlistId = generatedPlaylistId, songId = song.id))
+                        }
                         
                         _playlistsImportProgress.emit(ImportProgressEvent.PlaylistsProgress(
                             completed = false,
@@ -245,13 +250,14 @@ class ImportFromSpotifyViewModel @Inject constructor(
                         val query = "${likedSong.name ?: ""} ${likedSong.artists.firstOrNull()?.name ?: ""}"
                         YouTube.search(query, YouTube.SearchFilter.FILTER_SONG).onSuccess { result ->
                             val song = result.items.firstOrNull() as? SongItem ?: return@onSuccess
-                            localDatabase.insert(SongEntity(
-                                id = song.id,
-                                title = song.title,
-                                liked = saveInDefaultLikedSongs,
-                                thumbnailUrl = song.thumbnail.toHighResThumbnail(),
-                                localPath = null
-                            ))
+                            localDatabase.transaction {
+                                insert(song.toMediaMetadata()) {
+                                    it.copy(
+                                        liked = saveInDefaultLikedSongs,
+                                        inLibrary = if (saveInDefaultLikedSongs) LocalDateTime.now() else it.inLibrary
+                                    )
+                                }
+                            }
                             _likedSongsImportProgress.emit(ImportProgressEvent.LikedSongsProgress(
                                 completed = false,
                                 currentCount = progressedTracks.incrementAndGet(),
