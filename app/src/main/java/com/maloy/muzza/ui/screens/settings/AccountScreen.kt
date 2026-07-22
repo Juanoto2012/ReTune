@@ -19,6 +19,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
@@ -46,6 +47,8 @@ import com.maloy.muzza.ui.component.SwitchPreference
 import com.maloy.muzza.ui.component.TextFieldDialog
 import com.maloy.muzza.ui.utils.backToMain
 import com.maloy.muzza.utils.rememberPreference
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -63,6 +66,7 @@ fun AccountSettings(
         "SAPISID" in parseCookieString(innerTubeCookie)
     }
     val (ytmSync, onYtmSyncChange) = rememberPreference(YtmSyncKey, defaultValue = true)
+    val coroutineScope = rememberCoroutineScope()
 
     var showTokenEditor by remember {
         mutableStateOf(false)
@@ -92,14 +96,28 @@ fun AccountSettings(
             },
             initialTextFieldValue = TextFieldValue(text),
             onDone = { data ->
-                data.split("\n").forEach {
-                    when {
-                        it.startsWith("***INNERTUBE COOKIE*** =") -> onInnerTubeCookieChange(it.substringAfter("="))
-                        it.startsWith("***VISITOR DATA*** =") -> onVisitorDataChange(it.substringAfter("="))
-                        it.startsWith("***ACCOUNT NAME*** =") -> onAccountNameChange(it.substringAfter("="))
-                        it.startsWith("***ACCOUNT ImageUrl*** =") -> onAccountImageChange(it.substringAfter("="))
-                        it.startsWith("***ACCOUNT EMAIL*** =") -> onAccountEmailChange(it.substringAfter("="))
-                        it.startsWith("***ACCOUNT CHANNEL HANDLE*** =") -> onAccountChannelHandleChange(it.substringAfter("="))
+                if (data.contains("***INNERTUBE COOKIE*** =")) {
+                    data.split("\n").forEach {
+                        when {
+                            it.startsWith("***INNERTUBE COOKIE*** =") -> onInnerTubeCookieChange(it.substringAfter("="))
+                            it.startsWith("***VISITOR DATA*** =") -> onVisitorDataChange(it.substringAfter("="))
+                            it.startsWith("***ACCOUNT NAME*** =") -> onAccountNameChange(it.substringAfter("="))
+                            it.startsWith("***ACCOUNT ImageUrl*** =") -> onAccountImageChange(it.substringAfter("="))
+                            it.startsWith("***ACCOUNT EMAIL*** =") -> onAccountEmailChange(it.substringAfter("="))
+                            it.startsWith("***ACCOUNT CHANNEL HANDLE*** =") -> onAccountChannelHandleChange(it.substringAfter("="))
+                        }
+                    }
+                } else {
+                    onInnerTubeCookieChange(data)
+                    YouTube.cookie = data
+                    YouTube.useLoginForBrowse = true
+                    coroutineScope.launch(Dispatchers.IO) {
+                        YouTube.accountInfo().onSuccess {
+                            onAccountNameChange(it.name)
+                            onAccountEmailChange(it.email.orEmpty())
+                            onAccountChannelHandleChange(it.channelHandle.orEmpty())
+                            onAccountImageChange(it.thumbnailUrl.orEmpty())
+                        }
                     }
                 }
                 if (innerTubeCookie.isNotEmpty()) YouTube.useLoginForBrowse = true

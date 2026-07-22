@@ -175,6 +175,7 @@ dependencies {
     implementation(projects.kugou)
     implementation(projects.lrclib)
     implementation(projects.simpmusic)
+    implementation(projects.spotify)
     implementation(projects.kizzy)
     implementation(project(":proto"))
 

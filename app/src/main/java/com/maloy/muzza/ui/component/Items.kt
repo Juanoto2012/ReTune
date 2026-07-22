@@ -128,6 +128,7 @@ import com.maloy.muzza.ui.menu.YouTubeAlbumMenu
 import com.maloy.muzza.ui.menu.YouTubePlaylistMenu
 import com.maloy.muzza.ui.menu.YouTubeSongMenu
 import com.maloy.muzza.ui.utils.resize
+import com.maloy.muzza.ui.utils.toHighResThumbnail
 import com.maloy.muzza.utils.imageCache
 import com.maloy.muzza.utils.joinByBullet
 import com.maloy.muzza.utils.makeTimeString
@@ -1328,7 +1329,7 @@ fun CommunityPlaylistCard(
                                 model = item.songs
                                     .getOrNull(0)
                                     ?.thumbnail
-                                    ?.replace(Regex("w\\d+-h\\d+"), "w120-h120"),
+                                    ?.toHighResThumbnail(),
                                 contentDescription = null,
                                 contentScale = ContentScale.Crop,
                                 modifier = Modifier
@@ -1339,7 +1340,7 @@ fun CommunityPlaylistCard(
                                 model = item.songs
                                     .getOrNull(1)
                                     ?.thumbnail
-                                    ?.replace(Regex("w\\d+-h\\d+"), "w120-h120"),
+                                    ?.toHighResThumbnail(),
                                 contentDescription = null,
                                 contentScale = ContentScale.Crop,
                                 modifier = Modifier
@@ -1352,7 +1353,7 @@ fun CommunityPlaylistCard(
                                 model = item.songs
                                     .getOrNull(2)
                                     ?.thumbnail
-                                    ?.replace(Regex("w\\d+-h\\d+"), "w120-h120"),
+                                    ?.toHighResThumbnail(),
                                 contentDescription = null,
                                 contentScale = ContentScale.Crop,
                                 modifier = Modifier
@@ -1363,7 +1364,7 @@ fun CommunityPlaylistCard(
                                 model = item.songs
                                     .getOrNull(3)
                                     ?.thumbnail
-                                    ?.replace(Regex("w\\d+-h\\d+"), "w120-h120"),
+                                    ?.toHighResThumbnail(),
                                 contentDescription = null,
                                 contentScale = ContentScale.Crop,
                                 modifier = Modifier
@@ -1450,7 +1451,7 @@ fun CommunityPlaylistCard(
                                 .clip(RoundedCornerShape(16.dp))
                         ) {
                             AsyncImage(
-                                model = song.thumbnail.replace(Regex("w\\d+-h\\d+"), "w120-h120"),
+                                model = song.thumbnail.toHighResThumbnail(),
                                 contentDescription = null,
                                 modifier = Modifier.fillMaxSize(),
                                 contentScale = ContentScale.Crop,

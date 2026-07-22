@@ -5,16 +5,22 @@ fun String.resize(
     height: Int? = null,
 ): String {
     if (width == null && height == null) return this
-    "https://lh3\\.googleusercontent\\.com/.*=w(\\d+)-h(\\d+).*".toRegex().matchEntire(this)?.groupValues?.let { group ->
-        val (W, H) = group.drop(1).map { it.toInt() }
-        var w = width
-        var h = height
-        if (w != null && h == null) h = (w / W) * H
-        if (w == null && h != null) w = (h / H) * W
-        return "${split("=w")[0]}=w$w-h$h-p-l90-rj"
+    
+    // Mejorar el regex para capturar cualquier tamaño en URLs de Google/YT
+    val regex = "([\\s\\S]*)(=w\\d+-h\\d+.*)".toRegex()
+    val match = regex.find(this)
+    if (match != null) {
+        val baseUrl = match.groupValues[1]
+        return "$baseUrl=w${width ?: 544}-h${height ?: 544}-p-l90-rj"
     }
-    if (this matches "https://yt3\\.ggpht\\.com/.*=s(\\d+)".toRegex()) {
-        return "$this-s${width ?: height}"
+
+    // Para avatares de YouTube
+    if (this.contains("yt3.ggpht.com") && this.contains("=s")) {
+        return this.substringBeforeLast("=s") + "=s${width ?: 544}-c-k-c0x00ffffff-no-rj"
     }
-    return this
+
+    // Caso general de reemplazo de dimensiones
+    return this.replace(Regex("w\\d+-h\\d+"), "w${width ?: 544}-h${height ?: 544}")
 }
+
+fun String.toHighResThumbnail(): String = this.resize(544, 544)
