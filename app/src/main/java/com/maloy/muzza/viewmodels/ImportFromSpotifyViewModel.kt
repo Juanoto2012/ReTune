@@ -15,6 +15,7 @@ import com.maloy.innertube.YouTube
 import com.maloy.innertube.models.SongItem
 import com.maloy.muzza.models.toMediaMetadata
 import com.maloy.muzza.ui.utils.toHighResThumbnail
+import com.maloy.muzza.utils.SpotifyHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -69,19 +70,21 @@ class ImportFromSpotifyViewModel @Inject constructor(
 
     fun loginWithCredentials(clientId: String, clientSecret: String, code: String) {
         viewModelScope.launch {
-            importFromSpotifyScreenState.value = importFromSpotifyScreenState.value.copy(isRequesting = true, error = false)
-            com.maloy.spotify.Spotify.getAccessTokenWithCredentials(clientId, clientSecret, code).onSuccess { token ->
+            try {
+                importFromSpotifyScreenState.value = importFromSpotifyScreenState.value.copy(isRequesting = true, error = false)
+                val token = SpotifyHelper.getAccessTokenWithCredentials(clientId, clientSecret, code)
                 fetchInitialData(token)
-            }.onFailure { handleError(it) }
+            } catch (e: Exception) { handleError(e) }
         }
     }
 
     fun fetchPlaylistsWithSpDc(spDc: String) {
         viewModelScope.launch {
-            importFromSpotifyScreenState.value = importFromSpotifyScreenState.value.copy(isRequesting = true, error = false)
-            com.maloy.spotify.Spotify.getAccessTokenWithCookie(spDc).onSuccess { token ->
+            try {
+                importFromSpotifyScreenState.value = importFromSpotifyScreenState.value.copy(isRequesting = true, error = false)
+                val token = SpotifyHelper.getAccessTokenWithCookie(spDc)
                 fetchInitialData(token)
-            }.onFailure { handleError(it) }
+            } catch (e: Exception) { handleError(e) }
         }
     }
 
@@ -91,30 +94,28 @@ class ImportFromSpotifyViewModel @Inject constructor(
             isObtainingAccessTokenSuccessful = true
         )
 
-        com.maloy.spotify.Spotify.getUserProfile(token).onSuccess { profile ->
-            importFromSpotifyScreenState.value = importFromSpotifyScreenState.value.copy(
-                userName = profile.display_name ?: "Spotify User"
-            )
-        }
+        val profile = SpotifyHelper.getUserProfile(token)
+        importFromSpotifyScreenState.value = importFromSpotifyScreenState.value.copy(
+            userName = profile.display_name ?: "Spotify User"
+        )
 
-        com.maloy.spotify.Spotify.getPlaylists(token).onSuccess { response ->
-            importFromSpotifyScreenState.value = importFromSpotifyScreenState.value.copy(
-                playlists = response.items.map { 
-                    com.maloy.muzza.models.spotify.playlists.SpotifyPlaylistItem(
-                        playlistDescription = "",
-                        playlistId = it.id,
-                        playlistName = it.name,
-                        images = it.images.map { img -> com.maloy.muzza.models.spotify.playlists.Images(img.url) },
-                        tracks = com.maloy.muzza.models.spotify.Tracks(it.tracks?.total ?: 0),
-                        type = "playlist",
-                        uri = "spotify:playlist:${it.id}"
-                    )
-                },
-                totalPlaylistsCount = response.total ?: 0,
-                reachedEndForPlaylistPagination = response.next == null,
-                isRequesting = false
-            )
-        }.onFailure { handleError(it) }
+        val response = SpotifyHelper.getPlaylists(token)
+        importFromSpotifyScreenState.value = importFromSpotifyScreenState.value.copy(
+            playlists = response.items.map { 
+                com.maloy.muzza.models.spotify.playlists.SpotifyPlaylistItem(
+                    playlistDescription = "",
+                    playlistId = it.id,
+                    playlistName = it.name,
+                    images = it.images.map { img -> com.maloy.muzza.models.spotify.playlists.Images(img.url) },
+                    tracks = com.maloy.muzza.models.spotify.Tracks(it.tracks?.total ?: 0),
+                    type = "playlist",
+                    uri = "spotify:playlist:${it.id}"
+                )
+            },
+            totalPlaylistsCount = response.total ?: 0,
+            reachedEndForPlaylistPagination = response.next == null,
+            isRequesting = false
+        )
     }
 
     private fun handleError(e: Throwable) {
@@ -134,7 +135,8 @@ class ImportFromSpotifyViewModel @Inject constructor(
             importFromSpotifyScreenState.value = importFromSpotifyScreenState.value.copy(isRequesting = true)
             
             playListPaginationOffset += 50
-            com.maloy.spotify.Spotify.getPlaylists(token, offset = playListPaginationOffset).onSuccess { response ->
+            try {
+                val response = SpotifyHelper.getPlaylists(token, offset = playListPaginationOffset)
                 importFromSpotifyScreenState.value = importFromSpotifyScreenState.value.copy(
                     playlists = importFromSpotifyScreenState.value.playlists + response.items.map {
                         com.maloy.muzza.models.spotify.playlists.SpotifyPlaylistItem(
@@ -151,7 +153,7 @@ class ImportFromSpotifyViewModel @Inject constructor(
                     reachedEndForPlaylistPagination = response.next == null,
                     isRequesting = false
                 )
-            }.onFailure {
+            } catch (e: Exception) {
                 importFromSpotifyScreenState.value = importFromSpotifyScreenState.value.copy(isRequesting = false)
             }
         }
@@ -187,8 +189,8 @@ class ImportFromSpotifyViewModel @Inject constructor(
                 bookmarkedAt = LocalDateTime.now()
             ))
             
-            val tracksResult = com.maloy.spotify.Spotify.getPlaylistTracks(authToken, playlist.id)
-            val tracks = tracksResult.getOrNull()?.items?.mapNotNull { it.track } ?: emptyList()
+            val response = SpotifyHelper.getPlaylistTracks(authToken, playlist.id)
+            val tracks = response.items.mapNotNull { it.track }
 
             tracks.forEach { track ->
                 val cleanTitle = sanitizeTitle(track.name ?: "Unknown")
@@ -221,38 +223,39 @@ class ImportFromSpotifyViewModel @Inject constructor(
 
     private suspend fun importSpotifyLikedSongs(saveInDefaultLikedSongs: Boolean) {
         val progressedTracks = AtomicInteger(0)
-        val token = importFromSpotifyScreenState.value.accessToken
+        val token = try { SpotifyHelper.fetchAnonymousToken() } catch (e: Exception) { importFromSpotifyScreenState.value.accessToken }
         
-        val tracksResult = com.maloy.spotify.Spotify.getLikedSongs(token)
-        val response = tracksResult.getOrNull() ?: return
-        val totalSongsCount = response.total ?: 0
+        try {
+            val response = SpotifyHelper.getLikedSongs(token)
+            val totalSongsCount = response.total ?: 0
 
-        response.items.mapNotNull { it.track }.forEach { likedSong ->
-            val cleanTitle = sanitizeTitle(likedSong.name ?: "Unknown")
-            val artistName = likedSong.artists.firstOrNull()?.name ?: ""
-            val query = "$cleanTitle $artistName"
-            
-            val searchResult = YouTube.search(query, YouTube.SearchFilter.FILTER_SONG).getOrNull()
-            val song = searchResult?.items?.firstOrNull() as? SongItem
-            
-            if (song != null) {
-                localDatabase.transaction {
-                    insert(song.toMediaMetadata()) {
-                        it.copy(
-                            liked = saveInDefaultLikedSongs,
-                            inLibrary = if (saveInDefaultLikedSongs) LocalDateTime.now() else it.inLibrary
-                        )
+            response.items.mapNotNull { it.track }.forEach { likedSong ->
+                val cleanTitle = sanitizeTitle(likedSong.name ?: "Unknown")
+                val artistName = likedSong.artists.firstOrNull()?.name ?: ""
+                val query = "$cleanTitle $artistName"
+                
+                val searchResult = YouTube.search(query, YouTube.SearchFilter.FILTER_SONG).getOrNull()
+                val song = searchResult?.items?.firstOrNull() as? SongItem
+                
+                if (song != null) {
+                    localDatabase.transaction {
+                        insert(song.toMediaMetadata()) {
+                            it.copy(
+                                liked = saveInDefaultLikedSongs,
+                                inLibrary = if (saveInDefaultLikedSongs) LocalDateTime.now() else it.inLibrary
+                            )
+                        }
                     }
                 }
+                
+                _likedSongsImportProgress.emit(ImportProgressEvent.LikedSongsProgress(
+                    completed = false,
+                    currentCount = progressedTracks.incrementAndGet(),
+                    totalTracksCount = totalSongsCount
+                ))
+                delay(100)
             }
-            
-            _likedSongsImportProgress.emit(ImportProgressEvent.LikedSongsProgress(
-                completed = false,
-                currentCount = progressedTracks.incrementAndGet(),
-                totalTracksCount = totalSongsCount
-            ))
-            delay(100)
-        }
+        } catch (e: Exception) { Timber.e(e) }
     }
 
     private val _likedSongsImportProgress = MutableStateFlow(ImportProgressEvent.LikedSongsProgress(false, 0, 0))
