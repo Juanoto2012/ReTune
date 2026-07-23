@@ -1,6 +1,5 @@
 package com.maloy.muzza.viewmodels
 
-import android.content.Context
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
@@ -94,7 +93,7 @@ class ImportFromSpotifyViewModel @Inject constructor(
 
         com.maloy.spotify.Spotify.getUserProfile(token).onSuccess { profile ->
             importFromSpotifyScreenState.value = importFromSpotifyScreenState.value.copy(
-                userName = profile.displayName ?: "Spotify User"
+                userName = profile.display_name ?: "Spotify User"
             )
         }
 
@@ -106,7 +105,7 @@ class ImportFromSpotifyViewModel @Inject constructor(
                         playlistId = it.id,
                         playlistName = it.name,
                         images = it.images.map { img -> com.maloy.muzza.models.spotify.playlists.Images(img.url) },
-                        tracks = com.maloy.muzza.models.spotify.Tracks(it.tracksInfo?.total ?: 0),
+                        tracks = com.maloy.muzza.models.spotify.Tracks(it.tracks?.total ?: 0),
                         type = "playlist",
                         uri = "spotify:playlist:${it.id}"
                     )
@@ -143,6 +142,7 @@ class ImportFromSpotifyViewModel @Inject constructor(
                             playlistId = it.id,
                             playlistName = it.name,
                             images = it.images.map { img -> com.maloy.muzza.models.spotify.playlists.Images(img.url) },
+                            tracks = com.maloy.muzza.models.spotify.Tracks(it.tracks?.total ?: 0),
                             type = "playlist",
                             uri = "spotify:playlist:${it.id}"
                         )
@@ -187,8 +187,8 @@ class ImportFromSpotifyViewModel @Inject constructor(
                 bookmarkedAt = LocalDateTime.now()
             ))
             
-            val tracksResult = com.maloy.spotify.Spotify.getAllPlaylistTracks(authToken, playlist.id)
-            val tracks = tracksResult.getOrDefault(emptyList())
+            val tracksResult = com.maloy.spotify.Spotify.getPlaylistTracks(authToken, playlist.id)
+            val tracks = tracksResult.getOrNull()?.items?.mapNotNull { it.track } ?: emptyList()
 
             tracks.forEach { track ->
                 val cleanTitle = sanitizeTitle(track.name ?: "Unknown")
@@ -221,7 +221,7 @@ class ImportFromSpotifyViewModel @Inject constructor(
 
     private suspend fun importSpotifyLikedSongs(saveInDefaultLikedSongs: Boolean) {
         val progressedTracks = AtomicInteger(0)
-        val token = com.maloy.spotify.Spotify.fetchAnonymousToken().getOrNull() ?: importFromSpotifyScreenState.value.accessToken
+        val token = importFromSpotifyScreenState.value.accessToken
         
         val tracksResult = com.maloy.spotify.Spotify.getLikedSongs(token)
         val response = tracksResult.getOrNull() ?: return

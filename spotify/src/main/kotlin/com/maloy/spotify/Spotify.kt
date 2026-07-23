@@ -27,26 +27,20 @@ object Spotify {
     }
 
     private const val USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
-    private const val REFERER = "https://open.spotify.com/"
 
     @Serializable
     data class AuthResponse(
         @SerialName("accessToken") val accessToken: String,
-        @SerialName("token_type") val tokenType: String? = null
+        @SerialName("accessTokenExpirationTimestampMs") val expirationMs: Long? = null
     )
 
-    // REQUISITO 1: Token Anónimo
-    suspend fun fetchAnonymousToken(): Result<String> = runCatching {
-        val response: AuthResponse = client.get("https://open.spotify.com/get_access_token?reason=transport&productType=embed") {
-            header("User-Agent", USER_AGENT)
-            header("Referer", REFERER)
-        }.body()
-        response.accessToken
-    }
+    @Serializable
+    data class OldAuthResponse(
+        @SerialName("access_token") val accessToken: String
+    )
 
-    // MÉTODO TRADICIONAL
     suspend fun getAccessTokenWithCredentials(clientId: String, clientSecret: String, code: String): Result<String> = runCatching {
-        val response: AuthResponse = client.post("https://accounts.spotify.com/api/token") {
+        val response: OldAuthResponse = client.post("https://accounts.spotify.com/api/token") {
             basicAuth(clientId, clientSecret)
             setBody(FormDataContent(Parameters.build {
                 append("grant_type", "authorization_code")
@@ -57,19 +51,17 @@ object Spotify {
         response.accessToken
     }
 
-    // MÉTODO COOKIE
     suspend fun getAccessTokenWithCookie(spDc: String): Result<String> = runCatching {
         val response: AuthResponse = client.get("https://open.spotify.com/get_access_token?reason=transport&productType=web_player") {
             header("Cookie", "sp_dc=$spDc")
             header("User-Agent", USER_AGENT)
+            header("App-Platform", "WebPlayer")
         }.body()
         response.accessToken
     }
 
     @Serializable
-    data class UserProfile(
-        @SerialName("display_name") val displayName: String? = null
-    )
+    data class UserProfile(val display_name: String? = null)
 
     suspend fun getUserProfile(token: String): Result<UserProfile> = runCatching {
         client.get("https://api.spotify.com/v1/me") {
@@ -89,11 +81,11 @@ object Spotify {
         val id: String,
         val name: String,
         val images: List<Image> = emptyList(),
-        @SerialName("tracks") val tracksInfo: TrackCount? = null
-    ) {
-        @Serializable
-        data class TrackCount(val total: Int)
-    }
+        val tracks: TrackCount? = null
+    )
+
+    @Serializable
+    data class TrackCount(val total: Int)
 
     @Serializable
     data class Image(val url: String)
@@ -112,34 +104,23 @@ object Spotify {
     )
 
     @Serializable
-    data class TrackContainer(
-        val track: Track? = null
-    )
+    data class TrackContainer(val track: Track? = null)
 
     @Serializable
     data class Track(
         val id: String? = null,
         val name: String? = null,
-        val artists: List<Artist> = emptyList(),
-        @SerialName("duration_ms") val durationMs: Long? = 0
+        val artists: List<Artist> = emptyList()
     )
 
     @Serializable
     data class Artist(val name: String? = null)
 
-    // REQUISITO 2: Extracción con Paginación
-    suspend fun getAllPlaylistTracks(token: String, playlistId: String): Result<List<Track>> = runCatching {
-        val allTracks = mutableListOf<Track>()
-        var nextUrl: String? = "https://api.spotify.com/v1/playlists/$playlistId/tracks?limit=100"
-
-        while (nextUrl != null) {
-            val response: TracksResponse = client.get(nextUrl!!) {
-                header("Authorization", "Bearer $token")
-            }.body()
-            allTracks.addAll(response.items.mapNotNull { it.track })
-            nextUrl = response.next
-        }
-        allTracks
+    suspend fun getPlaylistTracks(token: String, playlistId: String, url: String? = null): Result<TracksResponse> = runCatching {
+        val requestUrl = url ?: "https://api.spotify.com/v1/playlists/$playlistId/tracks?limit=100"
+        client.get(requestUrl) {
+            header("Authorization", "Bearer $token")
+        }.body()
     }
 
     suspend fun getLikedSongs(token: String, url: String? = null): Result<TracksResponse> = runCatching {
@@ -147,5 +128,13 @@ object Spotify {
         client.get(requestUrl) {
             header("Authorization", "Bearer $token")
         }.body()
+    }
+    
+    suspend fun fetchAnonymousToken(): Result<String> = runCatching {
+        val response: AuthResponse = client.get("https://open.spotify.com/get_access_token?reason=transport&productType=embed") {
+            header("User-Agent", USER_AGENT)
+            header("Referer", "https://open.spotify.com/")
+        }.body()
+        response.accessToken
     }
 }
