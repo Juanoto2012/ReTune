@@ -26,16 +26,25 @@ object Spotify {
         }
     }
 
-    private const val USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    private const val USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+    private const val REFERER = "https://open.spotify.com/"
 
     @Serializable
     data class AuthResponse(
-        @SerialName("access_token") val accessToken: String,
-        @SerialName("token_type") val tokenType: String? = null,
-        @SerialName("expires_in") val expiresIn: Int? = null
+        @SerialName("accessToken") val accessToken: String,
+        @SerialName("token_type") val tokenType: String? = null
     )
 
-    // Método Tradicional (API Key)
+    // REQUISITO 1: Token Anónimo
+    suspend fun fetchAnonymousToken(): Result<String> = runCatching {
+        val response: AuthResponse = client.get("https://open.spotify.com/get_access_token?reason=transport&productType=embed") {
+            header("User-Agent", USER_AGENT)
+            header("Referer", REFERER)
+        }.body()
+        response.accessToken
+    }
+
+    // MÉTODO TRADICIONAL
     suspend fun getAccessTokenWithCredentials(clientId: String, clientSecret: String, code: String): Result<String> = runCatching {
         val response: AuthResponse = client.post("https://accounts.spotify.com/api/token") {
             basicAuth(clientId, clientSecret)
@@ -48,21 +57,18 @@ object Spotify {
         response.accessToken
     }
 
-    // Método Cookie (Vivi) - Lo dejamos como respaldo
+    // MÉTODO COOKIE
     suspend fun getAccessTokenWithCookie(spDc: String): Result<String> = runCatching {
-        val response: kotlinx.serialization.json.JsonObject = client.get("https://open.spotify.com/get_access_token?reason=transport&productType=web_player") {
+        val response: AuthResponse = client.get("https://open.spotify.com/get_access_token?reason=transport&productType=web_player") {
             header("Cookie", "sp_dc=$spDc")
             header("User-Agent", USER_AGENT)
         }.body()
-        response["accessToken"]?.let { 
-            it.toString().removeSurrounding("\"")
-        } ?: throw Exception("Token not found in response")
+        response.accessToken
     }
 
     @Serializable
     data class UserProfile(
-        @SerialName("display_name") val displayName: String? = null,
-        val id: String? = null
+        @SerialName("display_name") val displayName: String? = null
     )
 
     suspend fun getUserProfile(token: String): Result<UserProfile> = runCatching {
@@ -114,17 +120,26 @@ object Spotify {
     data class Track(
         val id: String? = null,
         val name: String? = null,
-        val artists: List<Artist> = emptyList()
+        val artists: List<Artist> = emptyList(),
+        @SerialName("duration_ms") val durationMs: Long? = 0
     )
 
     @Serializable
     data class Artist(val name: String? = null)
 
-    suspend fun getPlaylistTracks(token: String, playlistId: String, url: String? = null): Result<TracksResponse> = runCatching {
-        val requestUrl = url ?: "https://api.spotify.com/v1/playlists/$playlistId/tracks?limit=100"
-        client.get(requestUrl) {
-            header("Authorization", "Bearer $token")
-        }.body()
+    // REQUISITO 2: Extracción con Paginación
+    suspend fun getAllPlaylistTracks(token: String, playlistId: String): Result<List<Track>> = runCatching {
+        val allTracks = mutableListOf<Track>()
+        var nextUrl: String? = "https://api.spotify.com/v1/playlists/$playlistId/tracks?limit=100"
+
+        while (nextUrl != null) {
+            val response: TracksResponse = client.get(nextUrl!!) {
+                header("Authorization", "Bearer $token")
+            }.body()
+            allTracks.addAll(response.items.mapNotNull { it.track })
+            nextUrl = response.next
+        }
+        allTracks
     }
 
     suspend fun getLikedSongs(token: String, url: String? = null): Result<TracksResponse> = runCatching {

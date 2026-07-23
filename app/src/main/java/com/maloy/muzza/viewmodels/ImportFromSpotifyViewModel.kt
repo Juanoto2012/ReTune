@@ -1,18 +1,14 @@
 package com.maloy.muzza.viewmodels
 
 import android.content.Context
-import android.widget.Toast
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.maloy.muzza.db.MusicDatabase
-import com.maloy.muzza.db.entities.ArtistEntity
 import com.maloy.muzza.db.entities.PlaylistEntity
 import com.maloy.muzza.db.entities.PlaylistSongMap
-import com.maloy.muzza.db.entities.SongArtistMap
 import com.maloy.muzza.db.entities.SongEntity
-import com.maloy.muzza.models.spotify.tracks.TrackItem
 import com.maloy.muzza.ui.screens.settings.import_from_spotify.model.ImportFromSpotifyScreenState
 import com.maloy.muzza.ui.screens.settings.import_from_spotify.model.ImportProgressEvent
 import com.maloy.muzza.ui.screens.settings.import_from_spotify.model.Playlist
@@ -22,16 +18,11 @@ import com.maloy.muzza.models.toMediaMetadata
 import com.maloy.muzza.ui.utils.toHighResThumbnail
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.supervisorScope
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.time.LocalDateTime
@@ -42,6 +33,22 @@ import javax.inject.Inject
 class ImportFromSpotifyViewModel @Inject constructor(
     private val localDatabase: MusicDatabase
 ) : ViewModel() {
+
+    private fun sanitizeTitle(title: String): String {
+        return title
+            .replace(Regex("(?i)\\(remastered.*?\\)"), "")
+            .replace(Regex("(?i)\\[remastered.*?\\]"), "")
+            .replace(Regex("(?i)- remastered.*?$"), "")
+            .replace(Regex("(?i)\\(live.*?\\)"), "")
+            .replace(Regex("(?i)- live.*?$"), "")
+            .replace(Regex("(?i)\\[official.*?\\]"), "")
+            .replace(Regex("(?i)\\(official.*?\\)"), "")
+            .replace(Regex("(?i)\\(feat\\..*?\\)"), "")
+            .replace(Regex("(?i)\\[feat\\..*?\\]"), "")
+            .replace(Regex("\\s+"), " ")
+            .trim()
+    }
+
     val importFromSpotifyScreenState = mutableStateOf(
         ImportFromSpotifyScreenState(
             isRequesting = false,
@@ -55,32 +62,27 @@ class ImportFromSpotifyViewModel @Inject constructor(
             reachedEndForPlaylistPagination = false
         )
     )
+
     val selectedPlaylists = mutableStateListOf<Playlist>()
     val isLikedSongsSelectedForImport = mutableStateOf(false)
     val isImportingCompleted = mutableStateOf(false)
     val isImportingInProgress = mutableStateOf(false)
 
-    // Método Tradicional
     fun loginWithCredentials(clientId: String, clientSecret: String, code: String) {
         viewModelScope.launch {
             importFromSpotifyScreenState.value = importFromSpotifyScreenState.value.copy(isRequesting = true, error = false)
             com.maloy.spotify.Spotify.getAccessTokenWithCredentials(clientId, clientSecret, code).onSuccess { token ->
                 fetchInitialData(token)
-            }.onFailure { 
-                handleError(it)
-            }
+            }.onFailure { handleError(it) }
         }
     }
 
-    // Método Cookie (Vivi)
     fun fetchPlaylistsWithSpDc(spDc: String) {
         viewModelScope.launch {
             importFromSpotifyScreenState.value = importFromSpotifyScreenState.value.copy(isRequesting = true, error = false)
             com.maloy.spotify.Spotify.getAccessTokenWithCookie(spDc).onSuccess { token ->
                 fetchInitialData(token)
-            }.onFailure { 
-                handleError(it)
-            }
+            }.onFailure { handleError(it) }
         }
     }
 
@@ -125,7 +127,6 @@ class ImportFromSpotifyViewModel @Inject constructor(
         )
     }
 
-    private var paginatedResultsLimit = 50
     private var playListPaginationOffset = 0
 
     fun retrieveNextPageOfPlaylists() {
@@ -133,7 +134,7 @@ class ImportFromSpotifyViewModel @Inject constructor(
             val token = importFromSpotifyScreenState.value.accessToken
             importFromSpotifyScreenState.value = importFromSpotifyScreenState.value.copy(isRequesting = true)
             
-            playListPaginationOffset += paginatedResultsLimit
+            playListPaginationOffset += 50
             com.maloy.spotify.Spotify.getPlaylists(token, offset = playListPaginationOffset).onSuccess { response ->
                 importFromSpotifyScreenState.value = importFromSpotifyScreenState.value.copy(
                     playlists = importFromSpotifyScreenState.value.playlists + response.items.map {
@@ -162,115 +163,97 @@ class ImportFromSpotifyViewModel @Inject constructor(
         isImportingInProgress.value = true
         viewModelScope.launch(Dispatchers.IO) {
             supervisorScope {
-                logTheString("Starting the import process")
-                val likedSongsJob = launch {
-                    saveInDefaultLikedSongs?.let { importSpotifyLikedSongs(it) }
+                if (saveInDefaultLikedSongs != null) {
+                    importSpotifyLikedSongs(saveInDefaultLikedSongs)
                 }
-
-                val playlistsJob = launch {
-                    importPlaylists(selectedPlaylists, importFromSpotifyScreenState.value.accessToken)
+                importPlaylists(selectedPlaylists, importFromSpotifyScreenState.value.accessToken)
+                
+                withContext(Dispatchers.Main) {
+                    isImportingCompleted.value = true
+                    isImportingInProgress.value = false
                 }
-                likedSongsJob.join()
-                playlistsJob.join()
-                logTheString("Import Succeeded!")
-                isImportingCompleted.value = true
-                isImportingInProgress.value = false
             }
         }
     }
 
-    private suspend fun importPlaylists(selectedPlaylists: List<Playlist>, authToken: String) = supervisorScope {
+    private suspend fun importPlaylists(selectedPlaylists: List<Playlist>, authToken: String) {
         selectedPlaylists.forEachIndexed { playlistIndex, playlist ->
             var progressedTracksCount = 0
             val generatedPlaylistId = PlaylistEntity.generatePlaylistId()
+            
             localDatabase.insert(PlaylistEntity(
                 id = generatedPlaylistId, 
                 name = playlist.name,
                 bookmarkedAt = LocalDateTime.now()
             ))
             
-            val tracks = getTracksFromAPlaylist(playlist.id, authToken)
-            tracks.forEach { trackItem ->
-                launch {
-                    val query = "${trackItem.trackName} ${trackItem.artists.firstOrNull()?.name ?: ""}"
-                    YouTube.search(query, YouTube.SearchFilter.FILTER_SONG).onSuccess { result ->
-                        val song = result.items.firstOrNull() as? SongItem ?: return@onSuccess
-                        
-                        // Insertar canción con metadatos completos y marcar en la librería
-                        localDatabase.transaction {
-                            insert(song.toMediaMetadata()) {
-                                it.copy(inLibrary = LocalDateTime.now())
-                            }
-                            insert(PlaylistSongMap(playlistId = generatedPlaylistId, songId = song.id))
+            val tracksResult = com.maloy.spotify.Spotify.getAllPlaylistTracks(authToken, playlist.id)
+            val tracks = tracksResult.getOrDefault(emptyList())
+
+            tracks.forEach { track ->
+                val cleanTitle = sanitizeTitle(track.name ?: "Unknown")
+                val artistName = track.artists.firstOrNull()?.name ?: ""
+                val query = "$cleanTitle $artistName"
+                
+                val searchResult = YouTube.search(query, YouTube.SearchFilter.FILTER_SONG).getOrNull()
+                val song = searchResult?.items?.firstOrNull() as? SongItem
+                
+                if (song != null) {
+                    localDatabase.transaction {
+                        insert(song.toMediaMetadata()) {
+                            it.copy(inLibrary = LocalDateTime.now())
                         }
-                        
-                        _playlistsImportProgress.emit(ImportProgressEvent.PlaylistsProgress(
-                            completed = false,
-                            progressedTrackCount = ++progressedTracksCount,
-                            playlistName = playlist.name,
-                            totalTracksCount = tracks.size,
-                            currentPlaylistIndex = playlistIndex
-                        ))
+                        insert(PlaylistSongMap(playlistId = generatedPlaylistId, songId = song.id))
                     }
                 }
+                
+                _playlistsImportProgress.emit(ImportProgressEvent.PlaylistsProgress(
+                    completed = false,
+                    progressedTrackCount = ++progressedTracksCount,
+                    playlistName = playlist.name,
+                    totalTracksCount = tracks.size,
+                    currentPlaylistIndex = playlistIndex
+                ))
+                delay(100)
             }
         }
     }
 
-    private suspend fun getTracksFromAPlaylist(spotifyPlaylistId: String, authToken: String): List<TrackItem> {
-        val tracks = mutableListOf<TrackItem>()
-        var nextUrl: String? = null
-        do {
-            com.maloy.spotify.Spotify.getPlaylistTracks(authToken, spotifyPlaylistId, nextUrl).onSuccess { response ->
-                tracks.addAll(response.items.mapNotNull { it.track?.let { t ->
-                    TrackItem(
-                        trackName = t.name ?: "Unknown",
-                        artists = t.artists.map { a -> com.maloy.muzza.models.spotify.tracks.Artist(a.name ?: "Unknown") },
-                        trackId = t.id ?: "",
-                        isLocal = false,
-                        type = "track"
-                    )
-                }})
-                nextUrl = response.next
-            }.onFailure { nextUrl = null }
-        } while (nextUrl != null)
-        return tracks
-    }
-
-    private suspend fun importSpotifyLikedSongs(saveInDefaultLikedSongs: Boolean): Unit = supervisorScope {
-        var nextUrl: String? = null
-        var totalSongsCount = -1
+    private suspend fun importSpotifyLikedSongs(saveInDefaultLikedSongs: Boolean) {
         val progressedTracks = AtomicInteger(0)
-        do {
-            com.maloy.spotify.Spotify.getLikedSongs(importFromSpotifyScreenState.value.accessToken, nextUrl).onSuccess { response ->
-                totalSongsCount = response.total ?: 0
-                nextUrl = response.next
-                response.items.mapNotNull { it.track }.map { likedSong ->
-                    async {
-                        val query = "${likedSong.name ?: ""} ${likedSong.artists.firstOrNull()?.name ?: ""}"
-                        YouTube.search(query, YouTube.SearchFilter.FILTER_SONG).onSuccess { result ->
-                            val song = result.items.firstOrNull() as? SongItem ?: return@onSuccess
-                            localDatabase.transaction {
-                                insert(song.toMediaMetadata()) {
-                                    it.copy(
-                                        liked = saveInDefaultLikedSongs,
-                                        inLibrary = if (saveInDefaultLikedSongs) LocalDateTime.now() else it.inLibrary
-                                    )
-                                }
-                            }
-                            _likedSongsImportProgress.emit(ImportProgressEvent.LikedSongsProgress(
-                                completed = false,
-                                currentCount = progressedTracks.incrementAndGet(),
-                                totalTracksCount = totalSongsCount
-                            ))
-                        }
-                    }
-                }.awaitAll()
-            }.onFailure { nextUrl = null }
-        } while (nextUrl != null)
-    }
+        val token = com.maloy.spotify.Spotify.fetchAnonymousToken().getOrNull() ?: importFromSpotifyScreenState.value.accessToken
+        
+        val tracksResult = com.maloy.spotify.Spotify.getLikedSongs(token)
+        val response = tracksResult.getOrNull() ?: return
+        val totalSongsCount = response.total ?: 0
 
-    private fun logTheString(string: String) { Timber.tag("Muzza Log").d(string) }
+        response.items.mapNotNull { it.track }.forEach { likedSong ->
+            val cleanTitle = sanitizeTitle(likedSong.name ?: "Unknown")
+            val artistName = likedSong.artists.firstOrNull()?.name ?: ""
+            val query = "$cleanTitle $artistName"
+            
+            val searchResult = YouTube.search(query, YouTube.SearchFilter.FILTER_SONG).getOrNull()
+            val song = searchResult?.items?.firstOrNull() as? SongItem
+            
+            if (song != null) {
+                localDatabase.transaction {
+                    insert(song.toMediaMetadata()) {
+                        it.copy(
+                            liked = saveInDefaultLikedSongs,
+                            inLibrary = if (saveInDefaultLikedSongs) LocalDateTime.now() else it.inLibrary
+                        )
+                    }
+                }
+            }
+            
+            _likedSongsImportProgress.emit(ImportProgressEvent.LikedSongsProgress(
+                completed = false,
+                currentCount = progressedTracks.incrementAndGet(),
+                totalTracksCount = totalSongsCount
+            ))
+            delay(100)
+        }
+    }
 
     private val _likedSongsImportProgress = MutableStateFlow(ImportProgressEvent.LikedSongsProgress(false, 0, 0))
     val importLogs = mutableStateListOf<String>()
