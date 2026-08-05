@@ -994,4 +994,10 @@ val response = innerTube.browse(WEB_REMIX, continuation = continuation).body<Bro
     private val VISITOR_DATA_REGEX = Regex("^Cg[t|s]")
 
     const val DEFAULT_VISITOR_DATA = "CgtsZG1ySnZiQWtSbyiMjuGSBg%3D%3D"
+
+    suspend fun refreshConfig() = runCatching {
+        visitorData().onSuccess {
+            visitorData = it
+        }
+    }
 }

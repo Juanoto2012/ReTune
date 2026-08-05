@@ -149,11 +149,6 @@
                 android:resource="@xml/shortcuts" />
         </activity>
 
-        <activity
-            android:name=".ui.screens.settings.import_from_spotify.SpotifyLoginActivity"
-            android:exported="false"
-            android:theme="@style/Theme.ReTune" />
-
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.FileProvider"

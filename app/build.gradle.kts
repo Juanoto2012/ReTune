@@ -44,7 +44,7 @@ android {
         }
     }
     flavorDimensions += "version"
-    productFlavors {
+productFlavors {
         create("full") {
             dimension = "version"
         }
@@ -175,9 +175,8 @@ dependencies {
     implementation(projects.kugou)
     implementation(projects.lrclib)
     implementation(projects.simpmusic)
-    implementation(projects.spotify)
     implementation(projects.kizzy)
-    implementation(project(":proto"))
+    implementation(projects.proto)
 
     implementation(libs.ktor.client.core)
     implementation(libs.ktor.client.cio)
@@ -197,7 +196,6 @@ dependencies {
 
     implementation(libs.timber)
     implementation(libs.jaudiotagger)
-    implementation(libs.ktor.client.core)
     implementation(libs.ktor.client.okhttp)
     implementation(libs.ktor.client.content.negotiation)
     implementation(libs.ktor.serialization.json)

@@ -48,6 +48,7 @@ import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
@@ -80,6 +81,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -198,25 +200,17 @@ fun BottomSheetPlayer(
         listenTogetherManager?.role?.collectAsState(initial = RoomRole.GUEST)
     val isListenTogetherGuest = listenTogetherRoleState?.value == RoomRole.GUEST
 
-    val playerBackground by rememberEnumPreference(
-        key = PlayerBackgroundStyleKey,
-        defaultValue = PlayerBackgroundStyle.DEFAULT
-    )
-
     val useDarkTheme = remember(darkTheme, isSystemInDarkTheme) {
         if (darkTheme == DarkMode.AUTO) isSystemInDarkTheme else darkTheme == DarkMode.ON
     }
 
-    val onBackgroundColor = when (playerBackground) {
-        PlayerBackgroundStyle.DEFAULT -> MaterialTheme.colorScheme.secondary
-        else ->
-            if (useDarkTheme)
-                MaterialTheme.colorScheme.onSurface
-            else
-                if (pureBlack && darkTheme == DarkMode.ON && isSystemInDarkTheme)
-                    Color.White
-                else
-                    MaterialTheme.colorScheme.onPrimary
+    val playerBackground = PlayerBackgroundStyle.BLURMOV
+    
+    // Color que se adapta al modo claro/oscuro y al fondo inmersivo
+    val onBackgroundColor = when {
+        playerBackground == PlayerBackgroundStyle.BLURMOV || playerBackground == PlayerBackgroundStyle.GRADIENT -> Color.White
+        useDarkTheme -> MaterialTheme.colorScheme.onSurface
+        else -> MaterialTheme.colorScheme.onSurface
     }
 
     val (nowPlayingEnable) = rememberPreference(NowPlayingEnableKey, defaultValue = true)
@@ -393,256 +387,91 @@ fun BottomSheetPlayer(
         }
     ) {
         val controlsContent: @Composable ColumnScope.(MediaMetadata) -> Unit = { mediaMetadata ->
-            Row(
-                horizontalArrangement = Arrangement.Start,
+            // Título y Artista perfectamente centrados y adaptados
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = PlayerHorizontalPadding)
+                    .padding(horizontal = PlayerHorizontalPadding),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Row {
-                    if (!firstArtistThumbnail.isNullOrEmpty() && !showLyrics) {
-                        Box(
-                            modifier = Modifier
-                                .size(52.dp)
-                                .clip(RoundedCornerShape(26.dp))
-                                .background(MaterialTheme.colorScheme.surfaceVariant)
-                        ) {
-                            AsyncImage(
-                                model = firstArtistThumbnail,
-                                contentDescription = null,
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .clip(RoundedCornerShape(26.dp))
-                                    .clickable(enabled = mediaMetadata.artists.first().id != null && !mediaMetadata.isLocal) {
-                                        navController.navigate("artist/${mediaMetadata.artists.first().id}")
-                                        state.collapseSoft()
-                                    }
-                            )
-                        }
-                    } else {
-                        if (showLyrics) {
-                            Box(
-                                modifier = Modifier
-                                    .size(52.dp)
-                                    .clip(RoundedCornerShape(13.dp))
-                                    .background(MaterialTheme.colorScheme.surfaceVariant)
-                            ) {
-                                if (!mediaMetadata.isLocal && !currentSongThumbnail.isNullOrEmpty()) {
-                                    AsyncImage(
-                                        model = currentSongThumbnail,
-                                        contentDescription = null,
-                                        contentScale = ContentScale.Crop,
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .clip(RoundedCornerShape(13.dp))
-                                            .clickable(enabled = mediaMetadata.album != null) {
-                                                navController.navigate("album/${mediaMetadata.album!!.id}")
-                                                state.collapseSoft()
-                                            }
-                                    )
-                                } else {
-                                    AsyncLocalImage(
-                                        image = {
-                                            imageCache.getLocalThumbnail(
-                                                mediaMetadata.localPath,
-                                                false
-                                            )
-                                        },
-                                        contentDescription = null,
-                                        contentScale = ContentScale.Crop,
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .clip(RoundedCornerShape(13.dp))
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-                Spacer(modifier = Modifier.width(12.dp))
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                ) {
-                    AnimatedContent(
-                        targetState = mediaMetadata.title,
-                        transitionSpec = { fadeIn() togetherWith fadeOut() },
-                        label = "",
-                    ) { title ->
-                        Text(
-                            text = title,
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            color = onBackgroundColor,
-                            modifier =
-                                Modifier
-                                    .basicMarquee()
-                                    .clickable(enabled = mediaMetadata.album != null && !mediaMetadata.isVideoSong || mediaMetadata.playlist?.id != null) {
-                                        when {
-                                            mediaMetadata.album != null && mediaMetadata.playlist?.id != null -> {
-                                                showGoToAlbumPlaylistDialog = true
-                                            }
-
-                                            mediaMetadata.album != null && !mediaMetadata.isVideoSong -> {
-                                                navController.navigate("album/${mediaMetadata.album.id}")
-                                                state.collapseSoft()
-                                            }
-
-                                            mediaMetadata.playlist?.id != null -> {
-                                                if (dbPlaylistValue?.playlist?.id != null) {
-                                                    navController.navigate("local_playlist/${mediaMetadata.playlist.id}")
-                                                } else {
-                                                    navController.navigate("online_playlist/${mediaMetadata.playlist.id}?author=${mediaMetadata.playlist.author}")
-                                                }
-                                                state.collapseSoft()
-                                            }
-                                        }
-                                    }
-                        )
-                    }
-
-                    Row(
-                        modifier = Modifier.offset(y = 25.dp)
-                    ) {
-                        if (mediaMetadata.explicit) {
-                            Icon(
-                                painter = painterResource(R.drawable.explicit),
-                                contentDescription = null,
-                                tint = onBackgroundColor,
-                                modifier = Modifier
-                                    .size(20.dp)
-                                    .padding(end = 1.dp)
-                            )
-                        }
-                        mediaMetadata.artists.fastForEachIndexed { index, artist ->
-                            AnimatedContent(
-                                targetState = artist.name,
-                                transitionSpec = { fadeIn() togetherWith fadeOut() },
-                                label = "",
-                            ) { name ->
-                                Text(
-                                    text = name,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    color = onBackgroundColor,
-                                    maxLines = 1,
-                                    modifier =
-                                        Modifier.clickable(enabled = artist.id != null && !mediaMetadata.isLocal) {
-                                            navController.navigate("artist/${artist.id}")
-                                            state.collapseSoft()
-                                        },
-                                )
-                            }
-
-                            if (index != mediaMetadata.artists.lastIndex) {
-                                AnimatedContent(
-                                    targetState = ", ",
-                                    transitionSpec = { fadeIn() togetherWith fadeOut() },
-                                    label = "",
-                                ) { comma ->
-                                    Text(
-                                        text = comma,
-                                        style = MaterialTheme.typography.titleMedium,
-                                        color = onBackgroundColor,
-                                    )
-                                }
-                            }
-                        }
-                    }
+                AnimatedContent(
+                    targetState = mediaMetadata.title,
+                    transitionSpec = { fadeIn() togetherWith fadeOut() },
+                    label = "",
+                ) { title ->
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.ExtraBold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        color = onBackgroundColor,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .basicMarquee()
+                    )
                 }
 
-                Spacer(modifier = Modifier.width(10.dp))
-
-                if (!showLyrics) {
-                    Box(
-                        modifier = Modifier
-                            .offset(y = 5.dp)
-                            .size(36.dp)
-                            .clip(RoundedCornerShape(24.dp))
-                            .background(MaterialTheme.colorScheme.primary)
-                    ) {
-                        ResizableIconButton(
-                            icon = if (currentSong?.song?.liked == true) R.drawable.favorite else R.drawable.favorite_border,
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            modifier = Modifier
-                                .align(Alignment.Center)
-                                .size(24.dp),
-                            onClick = {
-                                playerConnection.toggleLike()
-                                currentSong?.song?.localToggleLike()
-                            }
-                        )
-                    }
-                } else {
-                    Box(
-                        modifier = Modifier
-                            .offset(y = 5.dp)
-                            .size(36.dp)
-                            .clip(RoundedCornerShape(24.dp))
-                            .background(MaterialTheme.colorScheme.primary)
-                    ) {
-                        ResizableImageButton(
-                            icon = Icons.Default.Fullscreen,
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            modifier = Modifier
-                                .align(Alignment.Center)
-                                .size(24.dp)
-                                .combinedClickable(
-                                    onClick = {
-                                        fullScreenLyrics = !fullScreenLyrics
-                                    },
-                                    onLongClick = {
-                                        fullScreenLyrics = !fullScreenLyrics
-                                        showLyrics = !showLyrics
-                                    }
-                                )
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.width(7.dp))
-
-                Box(
-                    modifier = Modifier
-                        .offset(y = 5.dp)
-                        .size(36.dp)
-                        .clip(RoundedCornerShape(24.dp))
-                        .background(MaterialTheme.colorScheme.primary)
-                ) {
-                    ResizableIconButton(
-                        icon = R.drawable.more_vert,
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        modifier = Modifier
-                            .size(24.dp)
-                            .align(Alignment.Center),
-                        onClick = {
-                            menuState.show {
-                                if (!showLyrics) {
-                                    PlayerMenu(
-                                        mediaMetadata = mediaMetadata,
-                                        navController = navController,
-                                        bottomSheetState = state,
-                                        onShowDetailsDialog = { showDetailsDialog = true },
-                                        onDismiss = menuState::dismiss
-                                    )
-                                } else {
-                                    LyricsMenu(
-                                        lyricsProvider = { lyricsEntity },
-                                        mediaMetadataProvider = { mediaMetadata },
-                                        onDismiss = menuState::dismiss,
-                                        navController = navController,
-                                        state = state
-                                    )
-                                }
-                            }
-                        }
+                mediaMetadata.artists.firstOrNull()?.name?.let { name ->
+                    Text(
+                        text = name,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = onBackgroundColor.copy(alpha = 0.7f),
+                        maxLines = 1,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
             }
 
-            Spacer(Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Fila de acciones (Like y Más opciones)
+            Row(
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = PlayerHorizontalPadding)
+            ) {
+                IconButton(
+                    onClick = {
+                        playerConnection.toggleLike()
+                        currentSong?.song?.localToggleLike()
+                    }
+                ) {
+                    Icon(
+                        painter = painterResource(if (currentSong?.song?.liked == true) R.drawable.favorite else R.drawable.favorite_border),
+                        tint = if (currentSong?.song?.liked == true) MaterialTheme.colorScheme.error else onBackgroundColor,
+                        contentDescription = null,
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
+
+                IconButton(
+                    onClick = {
+                        menuState.show {
+                            PlayerMenu(
+                                mediaMetadata = mediaMetadata,
+                                navController = navController,
+                                bottomSheetState = state,
+                                onShowDetailsDialog = { showDetailsDialog = true },
+                                onDismiss = menuState::dismiss
+                            )
+                        }
+                    }
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.more_vert),
+                        tint = onBackgroundColor,
+                        contentDescription = null,
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
 
             when (sliderStyle) {
                 SliderStyle.DEFAULT -> {
@@ -810,11 +639,12 @@ fun BottomSheetPlayer(
                                     playerConnection.player.togglePlayPause()
                                 }
                             },
-                            modifier = Modifier.size(72.dp),
+                            modifier = Modifier.size(92.dp),
                             colors = IconButtonDefaults.filledTonalIconButtonColors(
                                 containerColor = MaterialTheme.colorScheme.primaryContainer,
                                 contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
+                            ),
+                            shape = RoundedCornerShape(32.dp)
                         ) {
                             Icon(
                                 painter = painterResource(
@@ -823,24 +653,25 @@ fun BottomSheetPlayer(
                                     else R.drawable.play
                                 ),
                                 contentDescription = null,
-                                modifier = Modifier.size(36.dp)
+                                modifier = Modifier.size(48.dp)
                             )
                         }
                     } else {
                         FilledTonalIconButton(
                             onClick = { playerConnection.isMuted },
-                            modifier = Modifier.size(72.dp),
+                            modifier = Modifier.size(92.dp),
                             colors = IconButtonDefaults.filledTonalIconButtonColors(
                                 containerColor = MaterialTheme.colorScheme.primaryContainer,
                                 contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
+                            ),
+                            shape = RoundedCornerShape(32.dp)
                         ) {
                             Icon(
                                 imageVector =
                                     if (isMuted) Icons.AutoMirrored.Rounded.VolumeOff
                                     else Icons.AutoMirrored.Rounded.VolumeUp,
                                 contentDescription = null,
-                                modifier = Modifier.size(36.dp)
+                                modifier = Modifier.size(48.dp)
                             )
                         }
                     }
@@ -1035,12 +866,18 @@ fun BottomSheetPlayer(
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier
+                        .fillMaxSize()
                         .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Horizontal))
                         .padding(bottom = queueSheetState.collapsedBound)
                 ) {
+                    // Espacio para que el header "Now Playing" no pise la carátula
+                    Spacer(Modifier.height(80.dp))
+                    
                     Box(
                         contentAlignment = Alignment.Center,
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier
+                            .weight(1.2f) // Ajustado para dar más espacio a los controles
+                            .padding(horizontal = 40.dp) // Carátula más pequeña
                     ) {
                         Thumbnail(
                             sliderPositionProvider = { sliderPosition },
@@ -1050,11 +887,16 @@ fun BottomSheetPlayer(
                         )
                     }
 
-                    mediaMetadata?.let {
-                        controlsContent(it)
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        mediaMetadata?.let {
+                            controlsContent(it)
+                        }
                     }
 
-                    Spacer(Modifier.height(32.dp))
+                    Spacer(Modifier.height(16.dp))
                 }
             }
         }

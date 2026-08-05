@@ -531,9 +531,9 @@ class MusicService : MediaLibraryService(),
     private fun createExoPlayer(): ExoPlayer {
         val loadControl = DefaultLoadControl.Builder()
             .setBufferDurationsMs(
-                50000, // Min buffer 50s
-                100000, // Max buffer 100s
-                5000, // Playback 5s
+                15000, // Min buffer 15s
+                30000, // Max buffer 30s
+                2500, // Playback 2.5s
                 5000  // Rebuffer 5s
             )
             .build()

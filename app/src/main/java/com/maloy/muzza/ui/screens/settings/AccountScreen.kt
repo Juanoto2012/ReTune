@@ -186,17 +186,6 @@ fun AccountSettings(
             onCheckedChange = onYtmSyncChange,
             isEnabled = isLoggedIn,
         )
-        PreferenceGroupTitle(
-            title = stringResource(R.string.title_spotify)
-        )
-        PreferenceEntry(
-            title = { Text(stringResource(R.string.import_from_spotify)) },
-            description = null,
-            icon = { Icon(painterResource(R.drawable.spotify), null) },
-            onClick = {
-                navController.navigate("settings/import_from_spotify/ImportFromSpotify")
-            }
-        )
     }
     CenterAlignedTopAppBar(
         title = { Text(stringResource(R.string.account)) },

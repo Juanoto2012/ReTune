@@ -106,13 +106,8 @@ fun MiniPlayer(
         Box(
             modifier = modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 8.dp)
-                .height(MiniPlayerHeight - 4.dp)
-                .background(
-                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                    shape = RoundedCornerShape(28.dp)
-                )
-                .clip(RoundedCornerShape(28.dp))
+                .height(MiniPlayerHeight)
+                .background(MaterialTheme.colorScheme.surfaceContainerHigh)
                 .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Horizontal))
                 .pointerInput(isListenTogetherGuest, Unit) {
                     detectHorizontalDragGestures(
@@ -349,15 +344,15 @@ fun MiniMediaInfo(
         modifier = modifier
     ) {
         Box(
-            modifier = Modifier.padding(6.dp),
+            modifier = Modifier.padding(8.dp),
             contentAlignment = Alignment.Center
         ) {
             CircularProgressIndicator(
                 progress = { (position.toFloat() / duration).coerceIn(0f, 1f) },
-                modifier = Modifier.size(54.dp),
-                strokeWidth = 2.dp,
+                modifier = Modifier.size(48.dp),
+                strokeWidth = 3.dp,
                 color = MaterialTheme.colorScheme.primary,
-                trackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                trackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
             )
             
             if (mediaMetadata.isLocal) {
@@ -367,7 +362,7 @@ fun MiniMediaInfo(
                         contentDescription = null,
                         contentScale = contentScale,
                         modifier = Modifier
-                            .size(44.dp)
+                            .size(38.dp)
                             .aspectRatio(1f)
                             .clip(CircleShape)
                     )
@@ -378,7 +373,7 @@ fun MiniMediaInfo(
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
-                        .size(44.dp)
+                        .size(38.dp)
                         .aspectRatio(1f)
                         .clip(CircleShape)
                 )
