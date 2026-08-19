@@ -998,6 +998,8 @@ val response = innerTube.browse(WEB_REMIX, continuation = continuation).body<Bro
     suspend fun refreshConfig() = runCatching {
         visitorData().onSuccess {
             visitorData = it
+            // Sincronizamos con el cliente más estable
+            innerTube.visitorData = it
         }
     }
 }

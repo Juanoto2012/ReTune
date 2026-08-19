@@ -206,12 +206,9 @@ fun BottomSheetPlayer(
 
     val playerBackground = PlayerBackgroundStyle.BLURMOV
     
-    // Color que se adapta al modo claro/oscuro y al fondo inmersivo
-    val onBackgroundColor = when {
-        playerBackground == PlayerBackgroundStyle.BLURMOV || playerBackground == PlayerBackgroundStyle.GRADIENT -> Color.White
-        useDarkTheme -> MaterialTheme.colorScheme.onSurface
-        else -> MaterialTheme.colorScheme.onSurface
-    }
+    // Controles siempre en modo "claro" (blanco/contraste) para que resalten sobre el BLUR
+    val onBackgroundColor = Color.White
+    val secondaryOnBackgroundColor = Color.White.copy(alpha = 0.7f)
 
     val (nowPlayingEnable) = rememberPreference(NowPlayingEnableKey, defaultValue = true)
     val (nowPlayingPadding) = rememberPreference(NowPlayingPaddingKey, defaultValue = 35)

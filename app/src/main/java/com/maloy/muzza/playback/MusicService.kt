@@ -905,6 +905,14 @@ class MusicService : MediaLibraryService(),
     }
 
     override fun onPlayerError(error: PlaybackException) {
+        if (error.errorCode == PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED ||
+            error.errorCode == PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_TIMEOUT) {
+            // Reintento silencioso si es error de red
+            player.prepare()
+            player.play()
+            return
+        }
+
         if (dataStore.get(AutoSkipNextOnErrorKey, false) &&
             isInternetAvailable(this) &&
             player.hasNextMediaItem()
@@ -979,16 +987,12 @@ class MusicService : MediaLibraryService(),
                 return@Factory if (!contentUri.isNullOrEmpty()) {
                     dataSpec.withUri(contentUri.toUri())
                 } else if (songPath != null) {
-                    try {
-                        val authority = "${packageName}.fileprovider"
-                        val fileUri = FileProvider.getUriForFile(
-                            this,
-                            authority,
-                            File(songPath)
-                        )
-                        dataSpec.withUri(fileUri)
-                    } catch (_: Exception) {
-                        dataSpec.withUri(Uri.fromFile(File(songPath)))
+                    // Fallback para rutas de SD Card antiguas o directas
+                    val file = File(songPath)
+                    if (file.exists()) {
+                        dataSpec.withUri(Uri.fromFile(file))
+                    } else {
+                        dataSpec
                     }
                 } else {
                     dataSpec
