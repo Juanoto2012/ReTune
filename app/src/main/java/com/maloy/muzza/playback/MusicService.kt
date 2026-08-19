@@ -584,6 +584,12 @@ class MusicService : MediaLibraryService(),
         mediaSession.setCustomLayout(
             listOf(
                 CommandButton.Builder()
+                    .setDisplayName(getString(R.string.start_radio))
+                    .setIconResId(R.drawable.radio)
+                    .setSessionCommand(CommandToggleStartRadio)
+                    .setEnabled(currentSong.value != null)
+                    .build(),
+                CommandButton.Builder()
                     .setDisplayName(
                         getString(
                             when (player.repeatMode) {

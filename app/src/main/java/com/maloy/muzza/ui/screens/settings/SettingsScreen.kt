@@ -127,6 +127,14 @@ fun SettingsScreen(
             onClick = { navController.navigate("settings/backup_restore") }
         )
         PreferenceEntry(
+            title = { Text("Buscar actualizaciones") },
+            description = "Versión instalada: 0.8.3",
+            icon = { Icon(painterResource(R.drawable.cached), null) },
+            onClick = { 
+                // Aquí se disparará el Updater que configuramos antes
+            }
+        )
+        PreferenceEntry(
             title = { Text(stringResource(R.string.about)) },
             icon = { Icon(painterResource(R.drawable.info), null) },
             onClick = { navController.navigate("settings/about") }

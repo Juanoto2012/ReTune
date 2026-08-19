@@ -72,6 +72,7 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
@@ -206,16 +207,23 @@ fun BottomSheetPlayer(
 
     val playerBackground = PlayerBackgroundStyle.BLURMOV
     
-    // Controles siempre en modo "claro" (blanco/contraste) para que resalten sobre el BLUR
-    val onBackgroundColor = Color.White
-    val secondaryOnBackgroundColor = Color.White.copy(alpha = 0.7f)
-
     val (nowPlayingEnable) = rememberPreference(NowPlayingEnableKey, defaultValue = true)
     val (nowPlayingPadding) = rememberPreference(NowPlayingPaddingKey, defaultValue = 35)
 
     var gradientColors by remember {
         mutableStateOf<List<Color>>(emptyList())
     }
+
+    // Inteligencia de color: Elige blanco o negro según la luminancia del fondo
+    val onBackgroundColor = remember(gradientColors) {
+        if (gradientColors.size >= 2) {
+            if (gradientColors[0].luminance() > 0.5f) Color.Black else Color.White
+        } else {
+            Color.White // Por defecto blanco para BLURMOV
+        }
+    }
+    
+    val secondaryOnBackgroundColor = onBackgroundColor.copy(alpha = 0.7f)
 
     LaunchedEffect(mediaMetadata, playerBackground) {
         if (useBlackBackground && playerBackground != PlayerBackgroundStyle.BLUR) {
