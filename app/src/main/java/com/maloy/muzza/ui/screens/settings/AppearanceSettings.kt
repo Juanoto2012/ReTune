@@ -94,9 +94,9 @@ fun AppearanceSettings(
     scrollBehavior: TopAppBarScrollBehavior,
 ) {
     val (swipeSongToDismiss, onSwipeSongToDismissChange) = rememberPreference(SwipeSongToDismissKey, defaultValue = true)
-    val (sliderStyle, onSliderStyleChange) = rememberEnumPreference(SliderStyleKey, defaultValue = SliderStyle.DEFAULT)
-    val (defaultOpenTab, onDefaultOpenTabChange) = rememberEnumPreference(DefaultOpenTabKey, defaultValue = NavigationTab.HOME)
-    val (gridCellSize, onGridCellSizeChange) = rememberEnumPreference(GridCellSizeKey, defaultValue = GridCellSize.BIG)
+    val (sliderStyle, onSliderStyleChange) = rememberEnumPreference<SliderStyle>(SliderStyleKey, defaultValue = SliderStyle.DEFAULT)
+    val (defaultOpenTab, onDefaultOpenTabChange) = rememberEnumPreference<NavigationTab>(DefaultOpenTabKey, defaultValue = NavigationTab.HOME)
+    val (gridCellSize, onGridCellSizeChange) = rememberEnumPreference<GridCellSize>(GridCellSizeKey, defaultValue = GridCellSize.BIG)
     val (swipeThumbnail, onSwipeThumbnailChange) = rememberPreference(SwipeThumbnailKey, defaultValue = true)
     val (slimNav, onSlimNavChange) = rememberPreference(SlimNavBarKey, defaultValue = true)
     val (twoLineSongItemLabel, onTwoLineSongItemLabelChange) = rememberPreference(TwoLineSongItemLabelKey, defaultValue = false)
@@ -105,17 +105,17 @@ fun AppearanceSettings(
     val (nowPlayingPadding,onNowPlayingPadding) = rememberPreference(NowPlayingPaddingKey, defaultValue = 35)
     val (showContentFilter, onShowContentFilterChange) = rememberPreference(ShowContentFilterKey, defaultValue = true)
     val (showRecentActivity,onShowRecentActivityChange) = rememberPreference(ShowRecentActivityKey, defaultValue = true)
-    val (playerStyle, onPlayerStyle) = rememberEnumPreference (PlayerStyleKey , defaultValue = PlayerStyle.NEW)
-    val (miniPlayerStyle, onMiniPlayerStyle) = rememberEnumPreference(MiniPlayerStyleKey, defaultValue = MiniPlayerStyle.NEW)
+    val (playerStyle, onPlayerStyle) = rememberEnumPreference<PlayerStyle>(PlayerStyleKey, defaultValue = PlayerStyle.NEW)
+    val (miniPlayerStyle, onMiniPlayerStyle) = rememberEnumPreference<MiniPlayerStyle>(MiniPlayerStyleKey, defaultValue = MiniPlayerStyle.NEW)
     val (innerTubeCookie) = rememberPreference(InnerTubeCookieKey, "")
     val isLoggedIn = remember(innerTubeCookie) {
         "SAPISID" in parseCookieString(innerTubeCookie)
     }
 
     val (playerBackground, onPlayerBackgroundChange) =
-        rememberEnumPreference(
+        rememberEnumPreference<PlayerBackgroundStyle>(
             PlayerBackgroundStyleKey,
-            defaultValue = PlayerBackgroundStyle.DEFAULT,
+            defaultValue = PlayerBackgroundStyle.FOLLOW_THEME,
         )
 
 
@@ -397,16 +397,14 @@ fun AppearanceSettings(
             onValueSelected = onMiniPlayerStyle
         )
 
-        EnumListPreference(
+        EnumListPreference<PlayerBackgroundStyle>(
             title = { Text(stringResource(R.string.player_background_style)) },
             icon = { Icon(painterResource(R.drawable.gradient), null) },
             selectedValue = playerBackground,
             onValueSelected = onPlayerBackgroundChange,
             valueText = {
                 when (it) {
-                    PlayerBackgroundStyle.DEFAULT -> stringResource(R.string.follow_theme)
-                    PlayerBackgroundStyle.GRADIENT -> stringResource(R.string.gradient)
-                    PlayerBackgroundStyle.BLURMOV -> stringResource(R.string.blurmv)
+                    PlayerBackgroundStyle.FOLLOW_THEME -> stringResource(R.string.follow_theme)
                     PlayerBackgroundStyle.BLUR -> stringResource(R.string.blur)
                 }
             }

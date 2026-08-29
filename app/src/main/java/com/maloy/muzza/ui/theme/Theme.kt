@@ -54,31 +54,23 @@ fun MuzzaTheme(
 }
 
 fun Bitmap.extractThemeColor(): Color {
-    val colorsToPopulation =
-        Palette
-            .from(this)
-            .maximumColorCount(8)
-            .generate()
-            .swatches
-            .associate { it.rgb to it.population }
-    val rankedColors = Score.score(colorsToPopulation)
-    return Color(rankedColors.first())
+    val palette = Palette.from(this).maximumColorCount(16).generate()
+    val swatch = palette.vibrantSwatch
+        ?: palette.mutedSwatch
+        ?: palette.dominantSwatch
+    
+    return swatch?.let { Color(it.rgb) } ?: DefaultThemeColor
 }
 
 fun Bitmap.extractGradientColors(): List<Color> {
-    val extractedColors = Palette.from(this)
-        .maximumColorCount(64)
+    val palette = Palette.from(this)
+        .maximumColorCount(32)
         .generate()
-        .swatches
-        .associate { it.rgb to it.population }
-
-    val orderedColors = Score.score(extractedColors, 2, 0xff4285f4.toInt(), true)
-        .sortedByDescending { Color(it).luminance() }
-
-    return if (orderedColors.size >= 2)
-        listOf(Color(orderedColors[0]), Color(orderedColors[1]))
-    else
-        listOf(Color(0xFF595959), Color(0xFF0D0D0D))
+    
+    val color1 = (palette.vibrantSwatch ?: palette.dominantSwatch)?.let { Color(it.rgb) } ?: Color(0xFF595959)
+    val color2 = (palette.darkVibrantSwatch ?: palette.mutedSwatch)?.let { Color(it.rgb) } ?: Color(0xFF0D0D0D)
+    
+    return listOf(color1, color2)
 }
 
 fun DynamicScheme.toColorScheme() =

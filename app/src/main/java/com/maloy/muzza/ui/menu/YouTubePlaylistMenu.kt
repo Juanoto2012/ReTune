@@ -33,6 +33,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
+import androidx.media3.exoplayer.offline.DownloadRequest
+import androidx.media3.exoplayer.offline.DownloadService
 import com.maloy.innertube.YouTube
 import com.maloy.innertube.models.PlaylistItem
 import com.maloy.innertube.models.SongItem
@@ -43,6 +46,7 @@ import com.maloy.muzza.R
 import com.maloy.muzza.db.entities.PlaylistEntity
 import com.maloy.muzza.db.entities.PlaylistSongMap
 import com.maloy.muzza.models.toMediaMetadata
+import com.maloy.muzza.playback.ExoDownloadService
 import com.maloy.muzza.playback.queues.YouTubeQueue
 import com.maloy.muzza.ui.component.ListMenu
 import com.maloy.muzza.ui.component.ListMenuItem
@@ -506,6 +510,30 @@ fun YouTubePlaylistMenu(
             HorizontalDivider()
         }
         ListMenuItem(
+            icon = R.drawable.download, title = R.string.download
+        ) {
+            songs.forEach { song ->
+                val downloadRequest =
+                    DownloadRequest.Builder(
+                        song.id,
+                        song.id.toUri()
+                    )
+                        .setCustomCacheKey(song.id)
+                        .setData(song.title.toByteArray())
+                        .build()
+                DownloadService.sendAddDownload(
+                    context,
+                    ExoDownloadService::class.java,
+                    downloadRequest,
+                    false
+                )
+            }
+            onDismiss()
+        }
+        item {
+            HorizontalDivider()
+        }
+        ListMenuItem(
             icon = R.drawable.playlist_add, title = R.string.add_to_playlist
         ) {
             showChoosePlaylistDialog = true
@@ -884,6 +912,30 @@ fun YouTubePlaylistMenuInPlaylistScreen(
             icon = R.drawable.queue_music, title = R.string.add_to_queue
         ) {
             playerConnection.addToQueue(songs.map { it.toMediaItemWithPlaylist(playlist.id, playListAuthor = playlist.author?.name) })
+            onDismiss()
+        }
+        item {
+            HorizontalDivider()
+        }
+        ListMenuItem(
+            icon = R.drawable.download, title = R.string.download
+        ) {
+            songs.forEach { song ->
+                val downloadRequest =
+                    DownloadRequest.Builder(
+                        song.id,
+                        song.id.toUri()
+                    )
+                        .setCustomCacheKey(song.id)
+                        .setData(song.title.toByteArray())
+                        .build()
+                DownloadService.sendAddDownload(
+                    context,
+                    ExoDownloadService::class.java,
+                    downloadRequest,
+                    false
+                )
+            }
             onDismiss()
         }
         item {

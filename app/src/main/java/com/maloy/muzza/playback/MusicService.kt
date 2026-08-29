@@ -587,7 +587,7 @@ class MusicService : MediaLibraryService(),
                     .setDisplayName(getString(R.string.start_radio))
                     .setIconResId(R.drawable.radio)
                     .setSessionCommand(CommandToggleStartRadio)
-                    .setEnabled(currentSong.value != null)
+                    .setEnabled(currentSong.value != null && currentSong.value?.song?.isLocal != true)
                     .build(),
                 CommandButton.Builder()
                     .setDisplayName(
@@ -616,20 +616,11 @@ class MusicService : MediaLibraryService(),
                     .setSessionCommand(CommandToggleLike)
                     .setEnabled(currentSong.value != null)
                     .build(),
-                if (currentSong.value?.song?.isLocal != true) {
-                    CommandButton.Builder()
-                        .setDisplayName(getString(R.string.start_radio))
-                        .setIconResId(R.drawable.radio)
-                        .setSessionCommand(CommandToggleStartRadio)
-                        .setEnabled(currentSong.value != null)
-                        .build()
-                } else {
-                    CommandButton.Builder()
-                        .setDisplayName(getString(if (player.shuffleModeEnabled) R.string.action_shuffle_off else R.string.action_shuffle_on))
-                        .setIconResId(if (player.shuffleModeEnabled) R.drawable.shuffle_on else R.drawable.shuffle)
-                        .setSessionCommand(CommandToggleShuffle)
-                        .build()
-                }
+                CommandButton.Builder()
+                    .setDisplayName(getString(if (player.shuffleModeEnabled) R.string.action_shuffle_off else R.string.action_shuffle_on))
+                    .setIconResId(if (player.shuffleModeEnabled) R.drawable.shuffle_on else R.drawable.shuffle)
+                    .setSessionCommand(CommandToggleShuffle)
+                    .build()
             ) as MutableList<CommandButton>
         )
     }

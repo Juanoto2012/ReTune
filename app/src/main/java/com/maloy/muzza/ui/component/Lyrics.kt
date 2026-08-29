@@ -162,8 +162,8 @@ fun Lyrics(
     val selectedIndices = remember { mutableStateListOf<Int>() }
     var showMaxSelectionToast by remember { mutableStateOf(false) }
 
-    val (playerStyle) = rememberEnumPreference(PlayerStyleKey, defaultValue = PlayerStyle.NEW)
-    val playerBackground by rememberEnumPreference(key = PlayerBackgroundStyleKey, defaultValue = PlayerBackgroundStyle.DEFAULT)
+    val (playerStyle) = rememberEnumPreference<PlayerStyle>(PlayerStyleKey, defaultValue = PlayerStyle.NEW)
+    val playerBackground by rememberEnumPreference<PlayerBackgroundStyle>(key = PlayerBackgroundStyleKey, defaultValue = PlayerBackgroundStyle.FOLLOW_THEME)
 
     val darkTheme by rememberEnumPreference(DarkModeKey, defaultValue = DarkMode.AUTO)
     val pureBlack by rememberPreference(PureBlackKey, defaultValue = false)
@@ -183,7 +183,7 @@ fun Lyrics(
     }
 
     val textColor = when (playerBackground) {
-        PlayerBackgroundStyle.DEFAULT -> MaterialTheme.colorScheme.secondary
+        PlayerBackgroundStyle.FOLLOW_THEME -> MaterialTheme.colorScheme.secondary
         else ->
             if (useDarkTheme)
                 MaterialTheme.colorScheme.onSurface

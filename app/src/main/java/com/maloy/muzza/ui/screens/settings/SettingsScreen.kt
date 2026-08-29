@@ -128,7 +128,7 @@ fun SettingsScreen(
         )
         PreferenceEntry(
             title = { Text("Buscar actualizaciones") },
-            description = "Versión instalada: 0.8.3",
+            description = "Versión instalada: 0.8.4",
             icon = { Icon(painterResource(R.drawable.cached), null) },
             onClick = { 
                 // Aquí se disparará el Updater que configuramos antes

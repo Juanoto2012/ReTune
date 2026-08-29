@@ -14,6 +14,8 @@ import androidx.media3.exoplayer.offline.DownloadManager
 import androidx.media3.exoplayer.offline.DownloadNotificationHelper
 import androidx.media3.exoplayer.offline.DownloadRequest
 import androidx.media3.exoplayer.offline.DownloadService
+import coil.Coil
+import coil.request.ImageRequest
 import com.maloy.innertube.YouTube
 import com.maloy.muzza.constants.AudioQuality
 import com.maloy.muzza.constants.AudioQualityKey
@@ -29,6 +31,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.runBlocking
@@ -134,7 +137,17 @@ class DownloadUtil @Inject constructor(
     fun download(song: SongEntity){
         downloadSong(song.id, song.title)
     }
-    private fun downloadSong(id: String, title: String){
+    private fun downloadSong(id: String, title: String) {
+        // Pre-fetch artwork so it's cached offline
+        runBlocking(Dispatchers.IO) {
+            database.song(id).firstOrNull()?.song?.thumbnailUrl?.let { url ->
+                val request = ImageRequest.Builder(context)
+                    .data(url)
+                    .build()
+                Coil.imageLoader(context).enqueue(request)
+            }
+        }
+
         val downloadRequest = DownloadRequest.Builder(id, id.toUri())
             .setCustomCacheKey(id)
             .setData(title.toByteArray())
@@ -143,7 +156,8 @@ class DownloadUtil @Inject constructor(
             context,
             ExoDownloadService::class.java,
             downloadRequest,
-            false)
+            false
+        )
     }
     init {
         val result = mutableMapOf<String, Download>()

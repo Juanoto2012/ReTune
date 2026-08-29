@@ -164,11 +164,6 @@ fun BottomSheetPlayer(
             if (darkTheme == DarkMode.AUTO) isSystemInDarkTheme else darkTheme == DarkMode.ON
         useDarkTheme && pureBlack
     }
-    if (useBlackBackground && state.value > state.collapsedBound) {
-        lerp(MaterialTheme.colorScheme.surfaceContainer, Color.Black, state.progress)
-    } else {
-        MaterialTheme.colorScheme.surfaceContainer
-    }
 
     var showLyrics by rememberPreference(ShowLyricsKey, defaultValue = false)
 
@@ -201,11 +196,7 @@ fun BottomSheetPlayer(
         listenTogetherManager?.role?.collectAsState(initial = RoomRole.GUEST)
     val isListenTogetherGuest = listenTogetherRoleState?.value == RoomRole.GUEST
 
-    val useDarkTheme = remember(darkTheme, isSystemInDarkTheme) {
-        if (darkTheme == DarkMode.AUTO) isSystemInDarkTheme else darkTheme == DarkMode.ON
-    }
-
-    val playerBackground = PlayerBackgroundStyle.BLURMOV
+    val playerBackground = rememberEnumPreference<PlayerBackgroundStyle>(PlayerBackgroundStyleKey, PlayerBackgroundStyle.FOLLOW_THEME).value
     
     val (nowPlayingEnable) = rememberPreference(NowPlayingEnableKey, defaultValue = true)
     val (nowPlayingPadding) = rememberPreference(NowPlayingPaddingKey, defaultValue = 35)
@@ -214,37 +205,28 @@ fun BottomSheetPlayer(
         mutableStateOf<List<Color>>(emptyList())
     }
 
-    // Inteligencia de color: Elige blanco o negro según la luminancia del fondo
-    val onBackgroundColor = remember(gradientColors) {
-        if (gradientColors.size >= 2) {
+    // Elige blanco o negro según la luminancia del fondo o si es Follow Theme
+    val onBackgroundColor = remember(gradientColors, playerBackground, isSystemInDarkTheme, darkTheme) {
+        if (playerBackground == PlayerBackgroundStyle.FOLLOW_THEME) {
+            val useDarkTheme = if (darkTheme == DarkMode.AUTO) isSystemInDarkTheme else darkTheme == DarkMode.ON
+            if (useDarkTheme) Color.White else Color.Black
+        } else if (gradientColors.size >= 2) {
             if (gradientColors[0].luminance() > 0.5f) Color.Black else Color.White
         } else {
-            Color.White // Por defecto blanco para BLURMOV
+            Color.White // Por defecto blanco para BLUR
         }
     }
     
     val secondaryOnBackgroundColor = onBackgroundColor.copy(alpha = 0.7f)
 
     LaunchedEffect(mediaMetadata, playerBackground) {
-        if (useBlackBackground && playerBackground != PlayerBackgroundStyle.BLUR) {
-            gradientColors = listOf(Color.Black, Color.Black)
-        }
-        if (useBlackBackground && playerBackground != PlayerBackgroundStyle.GRADIENT) {
-            gradientColors = listOf(Color.Black, Color.Black)
-        } else if (playerBackground == PlayerBackgroundStyle.GRADIENT) {
-            withContext(Dispatchers.IO) {
-                val result = (ImageLoader(context).execute(
-                    ImageRequest.Builder(context).data(mediaMetadata?.thumbnailUrl)
-                        .allowHardware(false).build(),
-                ).drawable as? BitmapDrawable)?.bitmap?.extractGradientColors()
-
-                result?.let {
-                    gradientColors = it
-                }
-            }
-        } else {
+        if (playerBackground == PlayerBackgroundStyle.FOLLOW_THEME) {
             gradientColors = emptyList()
+            return@LaunchedEffect
         }
+        
+        // Para BLUR
+        gradientColors = emptyList()
     }
 
     var position by rememberSaveable(playbackState) {
@@ -375,9 +357,9 @@ fun BottomSheetPlayer(
         state = state,
         modifier = modifier,
         backgroundColor = when {
+            playerBackground == PlayerBackgroundStyle.FOLLOW_THEME -> MaterialTheme.colorScheme.surface
             pureBlack && (darkTheme == DarkMode.ON || useBlackBackground) -> Color.Black
-            useDarkTheme || playerBackground == PlayerBackgroundStyle.DEFAULT -> MaterialTheme.colorScheme.surfaceContainer
-            else -> MaterialTheme.colorScheme.onSurfaceVariant
+            else -> MaterialTheme.colorScheme.surfaceContainer
         },
         collapsedBackgroundColor = MaterialTheme.colorScheme.surfaceContainer,
         onDismiss = {
@@ -762,73 +744,6 @@ fun BottomSheetPlayer(
                     modifier = Modifier
                         .fillMaxSize()
                         .blur(100.dp)
-                )
-            }
-        } else if (playerBackground == PlayerBackgroundStyle.GRADIENT && gradientColors.size >= 2) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Brush.verticalGradient(gradientColors))
-            )
-        }
-        if (playerBackground == PlayerBackgroundStyle.BLURMOV) {
-            val infiniteTransition = rememberInfiniteTransition(label = "")
-            val rotation by infiniteTransition.animateFloat(
-                initialValue = 0f,
-                targetValue = 360f,
-                animationSpec = infiniteRepeatable(
-                    animation = tween(
-                        durationMillis = 100000,
-                        easing = FastOutSlowInEasing
-                    ),
-                    repeatMode = RepeatMode.Restart
-                ), label = ""
-            )
-            if (mediaMetadata?.isLocal == true) {
-                mediaMetadata?.let {
-                    AsyncLocalImage(
-                        image = { imageCache.getLocalThumbnail(it.localPath) },
-                        contentDescription = null,
-                        contentScale = ContentScale.FillBounds,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .blur(100.dp)
-                            .alpha(0.8f)
-                            .background(if (useBlackBackground) Color.Black.copy(alpha = 0.5f) else Color.Transparent)
-                            .rotate(rotation)
-                    )
-                }
-            } else {
-                val infiniteTransition = rememberInfiniteTransition(label = "")
-                val rotation by infiniteTransition.animateFloat(
-                    initialValue = 0f,
-                    targetValue = 360f,
-                    animationSpec = infiniteRepeatable(
-                        animation = tween(
-                            durationMillis = 100000,
-                            easing = FastOutSlowInEasing
-                        ),
-                        repeatMode = RepeatMode.Restart
-                    ), label = ""
-                )
-                AsyncImage(
-                    model = mediaMetadata?.thumbnailUrl,
-                    contentDescription = null,
-                    contentScale = ContentScale.FillBounds,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .blur(100.dp)
-                        .alpha(0.8f)
-                        .background(if (useBlackBackground) Color.Black.copy(alpha = 0.5f) else Color.Transparent)
-                        .rotate(rotation)
-                )
-            }
-
-            if (showLyrics) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color.Black.copy(alpha = 0.3f))
                 )
             }
         }

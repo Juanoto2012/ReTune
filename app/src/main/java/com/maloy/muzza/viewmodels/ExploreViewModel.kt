@@ -18,7 +18,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import java.time.LocalDateTime
+import java.time.ZoneOffset
 import javax.inject.Inject
 
 @HiltViewModel
@@ -31,6 +34,16 @@ class ExploreViewModel @Inject constructor(
     private val _error = MutableStateFlow<String?>(null)
     val error = _error.asStateFlow()
     val explorePage = MutableStateFlow<ExplorePage?>(null)
+    
+    val forYouSongs = database.mostPlayedSongs(
+        fromTimeStamp = LocalDateTime.now().minusDays(30).toInstant(ZoneOffset.UTC).toEpochMilli(),
+        limit = 20
+    )
+
+    val forYouArtists = database.mostPlayedArtists(
+        fromTimeStamp = LocalDateTime.now().minusDays(30).toInstant(ZoneOffset.UTC).toEpochMilli(),
+        limit = 10
+    )
 
     private suspend fun load() {
         YouTube.explore().onSuccess { page ->

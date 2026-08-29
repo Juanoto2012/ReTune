@@ -92,7 +92,7 @@ val AutoSkipNextOnErrorKey = booleanPreferencesKey("autoSkipNextOnError")
 val AutoLoadMoreKey = booleanPreferencesKey("autoLoadMore")
 val StopMusicOnTaskClearKey = booleanPreferencesKey("stopMusicOnTaskClear")
 val KeepAliveKey = booleanPreferencesKey("keepAlive")
-val SlimNavBarKey = booleanPreferencesKey("slimNavBar")
+val SlimNavBarKey = booleanPreferencesKey("slimNavBar") // Cambiado a true por defecto en MainActivity, pero aquí lo mantenemos para referencia
 val TwoLineSongItemLabelKey = booleanPreferencesKey("twoLineSongItemLabel")
 
 val MaxImageCacheSizeKey = intPreferencesKey("maxImageCacheSize")
@@ -237,10 +237,8 @@ enum class MiniPlayerStyle {
 }
 
 enum class PlayerBackgroundStyle {
-    DEFAULT,
-    GRADIENT,
-    BLUR,
-    BLURMOV
+    FOLLOW_THEME,
+    BLUR
 }
 
 val PlayerBackgroundStyleKey = stringPreferencesKey("playerBackgroundStyle")

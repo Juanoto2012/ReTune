@@ -20,6 +20,8 @@
     <string name="forgotten_favorites">Favoritos olvidados</string>
     <string name="keep_listening">Seguir escuchando</string>
     <string name="similar_to">Similar a</string>
+    <string name="made_for_you">Hecho para ti</string>
+    <string name="your_favorite_artists">Tus artistas favoritos</string>
     <string name="new_release_albums">Nuevos lanzamientos</string>
     <!-- History -->
     <string name="today">Hoy</string>

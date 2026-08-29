@@ -28,6 +28,7 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults.Indicator
 import androidx.compose.material3.pulltorefresh.pullToRefresh
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -41,12 +42,18 @@ import androidx.navigation.NavController
 import com.maloy.muzza.LocalPlayerAwareWindowInsets
 import com.maloy.muzza.LocalPlayerConnection
 import com.maloy.muzza.R
+import com.maloy.muzza.extensions.togglePlayPause
+import com.maloy.muzza.models.toMediaMetadata
+import com.maloy.muzza.ui.component.ArtistGridItem
 import com.maloy.muzza.ui.component.LocalMenuState
 import com.maloy.muzza.ui.component.NavigationTitle
+import com.maloy.muzza.ui.component.SongGridItem
 import com.maloy.muzza.ui.component.YouTubeGridItem
 import com.maloy.muzza.ui.component.shimmer.GridItemPlaceHolder
 import com.maloy.muzza.ui.component.shimmer.ShimmerHost
 import com.maloy.muzza.ui.component.shimmer.TextPlaceholder
+import com.maloy.muzza.ui.menu.ArtistMenu
+import com.maloy.muzza.ui.menu.SongMenu
 import com.maloy.muzza.ui.menu.YouTubeAlbumMenu
 import com.maloy.muzza.viewmodels.ExploreViewModel
 
@@ -64,6 +71,9 @@ fun ExploreScreen(
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
 
     val explorePage by viewModel.explorePage.collectAsState()
+    val forYouSongs by viewModel.forYouSongs.collectAsState(initial = emptyList())
+    val forYouArtists by viewModel.forYouArtists.collectAsState(initial = emptyList())
+    val coroutineScope = rememberCoroutineScope()
 
     val scrollState = rememberScrollState()
 
@@ -89,6 +99,95 @@ fun ExploreScreen(
                 )
             )
             explorePage?.newReleaseAlbums?.let { newReleaseAlbums ->
+                if (forYouSongs.isNotEmpty()) {
+                    NavigationTitle(
+                        title = stringResource(R.string.made_for_you),
+                    )
+
+                    LazyRow(
+                        contentPadding =
+                        WindowInsets.systemBars
+                            .only(WindowInsetsSides.Horizontal)
+                            .asPaddingValues()
+                    ) {
+                        items(
+                            items = forYouSongs,
+                            key = { it.id },
+                        ) { song ->
+                            SongGridItem(
+                                song = song,
+                                isActive = mediaMetadata?.id == song.id,
+                                isPlaying = isPlaying,
+                                navController = navController,
+                                modifier = Modifier
+                                    .combinedClickable(
+                                        onClick = {
+                                            if (song.id == mediaMetadata?.id) {
+                                                playerConnection.player.togglePlayPause()
+                                            } else {
+                                                playerConnection.playQueue(
+                                                    com.maloy.muzza.playback.queues.YouTubeQueue.radio(
+                                                        song.toMediaMetadata()
+                                                    )
+                                                )
+                                            }
+                                        },
+                                        onLongClick = {
+                                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                            menuState.show {
+                                                SongMenu(
+                                                    originalSong = song,
+                                                    navController = navController,
+                                                    onDismiss = menuState::dismiss,
+                                                )
+                                            }
+                                        },
+                                    )
+                                    .animateItem()
+                            )
+                        }
+                    }
+                }
+
+                if (forYouArtists.isNotEmpty()) {
+                    NavigationTitle(
+                        title = stringResource(R.string.your_favorite_artists),
+                    )
+
+                    LazyRow(
+                        contentPadding =
+                        WindowInsets.systemBars
+                            .only(WindowInsetsSides.Horizontal)
+                            .asPaddingValues()
+                    ) {
+                        items(
+                            items = forYouArtists,
+                            key = { it.id },
+                        ) { artist ->
+                            ArtistGridItem(
+                                artist = artist,
+                                modifier = Modifier
+                                    .combinedClickable(
+                                        onClick = {
+                                            navController.navigate("artist/${artist.id}")
+                                        },
+                                        onLongClick = {
+                                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                            menuState.show {
+                                                ArtistMenu(
+                                                    originalArtist = artist,
+                                                    coroutineScope = coroutineScope,
+                                                    onDismiss = menuState::dismiss,
+                                                )
+                                            }
+                                        },
+                                    )
+                                    .animateItem()
+                            )
+                        }
+                    }
+                }
+
                 NavigationTitle(
                     title = stringResource(R.string.new_release_albums),
                     onClick = {
