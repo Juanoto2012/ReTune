@@ -39,8 +39,8 @@ object Updater {
     private var cachedAllReleases: List<ReleaseInfo> = emptyList()
     
     private const val CHECK_INTERVAL_MILLIS = 2 * 60 * 60 * 1000L // 2 hours
-    private const val GITHUB_API_BASE = "https://api.github.com/repos/MetrolistGroup/Metrolist"
-    private const val KMP_RELEASES_URL = "https://api.github.com/repos/MetrolistGroup/Metrolist-KMP/releases?per_page=30"
+    private const val GITHUB_API_BASE = "https://api.github.com/repos/Juanoto2012/Retune"
+    private const val KMP_RELEASES_URL = "https://api.github.com/repos/Juanoto2012/Retune-KMP/releases?per_page=30"
     const val KMP_APK_NAME = "Metrolist.apk"
 
     /**

@@ -54,11 +54,14 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
+import okhttp3.ConnectionPool
+import okhttp3.Dispatcher
 import okhttp3.OkHttpClient
 import timber.log.Timber
 import java.io.IOException
 import java.time.LocalDateTime
 import java.util.concurrent.Executor
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -86,10 +89,17 @@ constructor(
                         .build()
                 } ?: response.request
             }
+            .dispatcher(Dispatcher().apply {
+                maxRequests = 64
+                maxRequestsPerHost = 64
+            })
+            .connectionPool(ConnectionPool(10, 5, TimeUnit.MINUTES))
+            .connectTimeout(15, TimeUnit.SECONDS)
+            .readTimeout(15, TimeUnit.SECONDS)
             .build()
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    private val downloadPreparations = Semaphore(3)
+    private val downloadPreparations = Semaphore(10)
 
     val downloads = MutableStateFlow<Map<String, Download>>(emptyMap())
 
@@ -235,7 +245,7 @@ constructor(
             dataSourceFactory,
             Executor(Runnable::run)
         ).apply {
-            maxParallelDownloads = 3
+            maxParallelDownloads = 16
             addListener(
                 object : DownloadManager.Listener {
                     override fun onDownloadChanged(

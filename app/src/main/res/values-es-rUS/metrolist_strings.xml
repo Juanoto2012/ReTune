@@ -571,7 +571,7 @@
     <string name="respect_agent_positioning">Respetar la posición de los agentes</string>
     <string name="changelog">Registro de cambios</string>
     <string name="changelog_empty">No hay registros de cambios disponibles</string>
-    <string name="github_releases_url">https://github.com/MetrolistGroup/Metrolist/releases</string>
+    <string name="github_releases_url">https://github.com/Juanoto2012/Retune/releases</string>
     <string name="list_bullet">•</string>
     <string name="view_on_github">Ver en GitHub</string>
     <string name="current_version">Versión actual</string>
@@ -714,7 +714,6 @@
     <string name="metrolist">METROLIST</string>
     <string name="wanna_play_favorite_song">¿Quieres reproducir su canción favorita?</string>
     <string name="yeah">¡Si!</string>
-    <string name="stands_with_palestine">Este proyecto apoya a palestina 🇵🇸</string>
     <string name="filter_podcasts">Podcasts</string>
     <string name="view_podcast">Ver podcast</string>
     <string name="podcast_channels">Canales de podcast</string>

@@ -13,6 +13,7 @@ import androidx.media3.datasource.cache.LeastRecentlyUsedCacheEvictor
 import androidx.media3.datasource.cache.NoOpCacheEvictor
 import androidx.media3.datasource.cache.SimpleCache
 import com.metrolist.music.constants.MaxSongCacheSizeKey
+import com.metrolist.music.constants.UseExternalStorageKey
 import com.metrolist.music.db.InternalDatabase
 import com.metrolist.music.db.MusicDatabase
 import com.metrolist.music.listentogether.ListenTogetherClient
@@ -28,6 +29,7 @@ import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import java.io.File
 import javax.inject.Singleton
 
 @Module
@@ -51,7 +53,16 @@ object AppModule {
     @Provides
     fun provideInternalDatabase(
         @ApplicationContext context: Context,
-    ): InternalDatabase = InternalDatabase.newInternalDatabaseInstance(context)
+    ): InternalDatabase {
+        val useExternal = context.dataStore[UseExternalStorageKey] ?: false
+        val dbName = if (useExternal && StorageUtils.isSdCardPresent(context)) {
+            val dir = StorageUtils.getStorageDir(context, "databases", useExternal = true)
+            File(dir, InternalDatabase.DB_NAME).absolutePath
+        } else {
+            InternalDatabase.DB_NAME
+        }
+        return InternalDatabase.newInternalDatabaseInstance(context, dbName)
+    }
 
     @Singleton
     @Provides
@@ -72,13 +83,14 @@ object AppModule {
         @ApplicationContext context: Context,
         databaseProvider: DatabaseProvider,
     ): Cache {
+        val useExternal = context.dataStore[UseExternalStorageKey] ?: false
         val cacheSize = context.dataStore[MaxSongCacheSizeKey] ?: 1024
         val evictor = when (cacheSize) {
             -1 -> NoOpCacheEvictor()
             else -> LeastRecentlyUsedCacheEvictor(cacheSize * 1024 * 1024L)
         }
         return SimpleCache(
-            StorageUtils.getStorageDir(context, "exoplayer"),
+            StorageUtils.getStorageDir(context, "exoplayer", useExternal),
             evictor,
             databaseProvider,
         )
@@ -90,11 +102,14 @@ object AppModule {
     fun provideDownloadCache(
         @ApplicationContext context: Context,
         databaseProvider: DatabaseProvider,
-    ): Cache = SimpleCache(
-        StorageUtils.getStorageDir(context, "download"),
-        NoOpCacheEvictor(),
-        databaseProvider,
-    )
+    ): Cache {
+        val useExternal = context.dataStore[UseExternalStorageKey] ?: false
+        return SimpleCache(
+            StorageUtils.getStorageDir(context, "download", useExternal),
+            NoOpCacheEvictor(),
+            databaseProvider,
+        )
+    }
 
     @Singleton
     @Provides

@@ -157,7 +157,11 @@ class InnerTube {
 
             engine {
                 config {
-                    connectionPool(okhttp3.ConnectionPool(10, 5, TimeUnit.MINUTES))
+                    dispatcher(okhttp3.Dispatcher().apply {
+                        maxRequests = 64
+                        maxRequestsPerHost = 64
+                    })
+                    connectionPool(okhttp3.ConnectionPool(64, 5, TimeUnit.MINUTES))
                     connectTimeout(30, TimeUnit.SECONDS)
                     readTimeout(60, TimeUnit.SECONDS)
                     writeTimeout(60, TimeUnit.SECONDS)

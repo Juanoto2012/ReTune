@@ -11,21 +11,34 @@ import java.io.File
 
 object StorageUtils {
     /**
-     * Returns a directory for storage. Prefers SD card if detected.
+     * Returns true if a removable SD card is detected.
      */
-    fun getStorageDir(context: Context, name: String): File {
-        val externalDirs = context.getExternalFilesDirs(null)
-        // Look for a directory that is on a removable storage (SD card)
-        val sdCardDir = externalDirs.firstOrNull { it != null && Environment.isExternalStorageRemovable(it) }
-            ?: externalDirs.getOrNull(1) // Fallback to second directory if available
+    fun isSdCardPresent(context: Context): Boolean {
+        return context.getExternalFilesDirs(null).any { it != null && Environment.isExternalStorageRemovable(it) }
+    }
 
-        val baseDir = sdCardDir ?: context.filesDir
+    /**
+     * Returns a directory for storage.
+     * If [useExternal] is true and an SD card is present, returns the SD card directory.
+     * Otherwise, returns the internal storage directory.
+     */
+    fun getStorageDir(context: Context, name: String, useExternal: Boolean = false): File {
+        val externalDirs = context.getExternalFilesDirs(null)
+        val sdCardDir = externalDirs.firstOrNull { it != null && Environment.isExternalStorageRemovable(it) }
+
+        val baseDir = if (useExternal && sdCardDir != null) {
+            sdCardDir
+        } else {
+            // Default to internal "external" storage if available, otherwise internal filesDir
+            externalDirs.firstOrNull() ?: context.filesDir
+        }
+
         val targetDir = File(baseDir, name)
-        
+
         if (!targetDir.exists()) {
             targetDir.mkdirs()
         }
-        
+
         return targetDir
     }
 }

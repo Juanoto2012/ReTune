@@ -236,6 +236,12 @@
     <string name="clear_image_cache_dialog">Are you sure you want to clear all cached images?</string>
     <string name="clear_downloads_dialog">Are you sure you want to clear all downloads?</string>
 
+    <string name="storage_location">Storage location</string>
+    <string name="use_sd_card">Use SD card</string>
+    <string name="use_sd_card_desc">Store downloads and cache on the SD card if available. A restart may be required for some changes to take effect.</string>
+    <string name="sd_card_not_detected">SD card not detected</string>
+    <string name="storage_restart_message">The storage location change will take effect after restarting the app. Restart now?</string>
+
     <string name="disable">Disable</string>
 
     <string name="not_logged_in_youtube">Not logged in to YouTube</string>
@@ -841,6 +847,8 @@
     <string name="logout_clear">Clear</string>
 
     <!-- Credits / About Screen -->
+    <string name="forked_by">Forked By %s</string>
+    <string name="created_by">Created By %s</string>
     <string name="credits_lead_developer">Lead developer</string>
     <string name="credits_collaborator">Collaborator</string>
     <string name="credits_collaborators_section">Collaborators</string>

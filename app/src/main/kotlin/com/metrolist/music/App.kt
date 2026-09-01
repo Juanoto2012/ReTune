@@ -297,9 +297,10 @@ class App :
     private var cachedCoilCacheSize: Int? = null
 
     override fun newImageLoader(context: PlatformContext): ImageLoader {
-        val cacheSize = cachedCoilCacheSize ?: runBlocking {
-            dataStore.data.map { it[MaxImageCacheSizeKey] ?: 512 }.first()
-        }
+        val settings = runBlocking { dataStore.data.first() }
+        val useExternal = settings[UseExternalStorageKey] ?: false
+        val cacheSize = cachedCoilCacheSize ?: settings[MaxImageCacheSizeKey] ?: 512
+
         return ImageLoader
             .Builder(this)
             .apply {
@@ -318,7 +319,7 @@ class App :
                     diskCache(
                         DiskCache
                             .Builder()
-                            .directory(StorageUtils.getStorageDir(context, "coil"))
+                            .directory(StorageUtils.getStorageDir(context, "coil", useExternal))
                             .maxSizeBytes(cacheSize * 1024 * 1024L)
                             .build(),
                     )

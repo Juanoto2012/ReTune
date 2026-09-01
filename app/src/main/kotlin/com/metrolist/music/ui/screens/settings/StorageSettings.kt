@@ -53,6 +53,7 @@ import com.metrolist.music.R
 import com.metrolist.music.constants.EnableSongCacheKey
 import com.metrolist.music.constants.MaxImageCacheSizeKey
 import com.metrolist.music.constants.MaxSongCacheSizeKey
+import com.metrolist.music.constants.UseExternalStorageKey
 import com.metrolist.music.extensions.tryOrNull
 import com.metrolist.music.ui.component.ActionPromptDialog
 import com.metrolist.music.ui.component.IconButton
@@ -96,6 +97,10 @@ fun StorageSettings(
         key = EnableSongCacheKey,
         defaultValue = true
     )
+    val (useExternalStorage, onUseExternalStorageChange) = rememberPreference(
+        key = UseExternalStorageKey,
+        defaultValue = false
+    )
 
     var clearDownloads by remember { mutableStateOf(false) }
     var clearCacheDialog by remember { mutableStateOf(false) }
@@ -103,6 +108,7 @@ fun StorageSettings(
 
     // State for the confirmation dialog
     var showCacheWarningDialog by remember { mutableStateOf(false) }
+    var showRestartDialog by remember { mutableStateOf(false) }
     var cacheType by remember { mutableStateOf("") }
     var cacheUsage by remember { androidx.compose.runtime.mutableLongStateOf(0L) }
     var onConfirmAction by remember { mutableStateOf<() -> Unit>({}) }
@@ -280,6 +286,32 @@ fun StorageSettings(
         )
     }
 
+    if (showRestartDialog) {
+        AlertDialog(
+            onDismissRequest = { showRestartDialog = false },
+            title = { Text(stringResource(R.string.restart_required)) },
+            text = { Text(stringResource(R.string.storage_restart_message)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val intent = context.packageManager.getLaunchIntentForPackage(context.packageName)
+                        intent?.addFlags(android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                        intent?.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                        context.startActivity(intent)
+                        Runtime.getRuntime().exit(0)
+                    },
+                ) {
+                    Text(stringResource(R.string.restart))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showRestartDialog = false }) {
+                    Text(stringResource(id = android.R.string.cancel))
+                }
+            },
+        )
+    }
+
     Column(
         Modifier
             .windowInsetsPadding(
@@ -300,6 +332,46 @@ fun StorageSettings(
             title = stringResource(R.string.storage),
             items =
                 listOf(
+                    Material3SettingsItem(
+                        icon = painterResource(R.drawable.storage),
+                        title = { Text(stringResource(R.string.storage_location)) },
+                        description = {
+                            val isSdPresent = remember { com.metrolist.music.utils.StorageUtils.isSdCardPresent(context) }
+                            Text(
+                                if (isSdPresent) {
+                                    stringResource(R.string.use_sd_card_desc)
+                                } else {
+                                    stringResource(R.string.sd_card_not_detected)
+                                }
+                            )
+                        },
+                        trailingContent = {
+                            val isSdPresent = remember { com.metrolist.music.utils.StorageUtils.isSdCardPresent(context) }
+                            Switch(
+                                checked = useExternalStorage,
+                                enabled = isSdPresent,
+                                onCheckedChange = {
+                                    onUseExternalStorageChange(it)
+                                    showRestartDialog = true
+                                },
+                                thumbContent = {
+                                    Icon(
+                                        painter = painterResource(
+                                            id = if (useExternalStorage) R.drawable.check else R.drawable.close
+                                        ),
+                                        contentDescription = null,
+                                        modifier = Modifier.size(SwitchDefaults.IconSize)
+                                    )
+                                }
+                            )
+                        },
+                        onClick = {
+                            if (com.metrolist.music.utils.StorageUtils.isSdCardPresent(context)) {
+                                onUseExternalStorageChange(!useExternalStorage)
+                                showRestartDialog = true
+                            }
+                        }
+                    ),
                     Material3SettingsItem(
                         icon = painterResource(R.drawable.storage),
                         title = { Text(stringResource(R.string.downloaded_songs)) },

@@ -39,7 +39,7 @@ val Context.dataStore: DataStore<Preferences>
         dataStoreInstance?.let { return it }
         synchronized(dataStoreLock) {
             dataStoreInstance?.let { return it }
-            val dir = StorageUtils.getStorageDir(this, "datastore")
+            val dir = StorageUtils.getStorageDir(this, "datastore", useExternal = false)
             dir.mkdirs()
             return PreferenceDataStoreFactory.create(
                 produceFile = { File(dir, "settings.preferences_pb") }
@@ -56,7 +56,7 @@ suspend fun Context.safeDataStoreEdit(
     transform: suspend (MutablePreferences) -> Unit,
 ): Boolean {
     return try {
-        val dir = StorageUtils.getStorageDir(this, "datastore")
+        val dir = StorageUtils.getStorageDir(this, "datastore", useExternal = false)
         dir.mkdirs()
         dataStore.edit(transform)
         true

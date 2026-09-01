@@ -66,7 +66,7 @@ object OpenRouterStreamingService {
                         .apply {
                             if (apiKey.isNotBlank()) addHeader("Authorization", "Bearer ${apiKey.trim()}")
                         }.addHeader("Content-Type", "application/json")
-                        .addHeader("HTTP-Referer", "https://github.com/MetrolistGroup/Metrolist")
+                        .addHeader("HTTP-Referer", "https://github.com/Juanoto2012/Retune")
                         .addHeader("X-Title", "Metrolist")
                         .post(body.toString().toRequestBody(jsonMediaType))
                         .build()
