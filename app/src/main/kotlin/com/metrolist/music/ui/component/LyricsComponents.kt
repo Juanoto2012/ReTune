@@ -76,7 +76,6 @@ import coil3.request.ImageRequest
 import coil3.request.allowHardware
 import coil3.toBitmap
 import com.metrolist.music.R
-import com.metrolist.music.lyrics.LyricsTranslationHelper
 import com.metrolist.music.models.MediaMetadata
 import com.metrolist.music.ui.screens.settings.LyricsPosition
 import com.metrolist.music.utils.ComposeToImage
@@ -84,91 +83,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-
-@Composable
-internal fun LyricsTranslationHeader(
-    status: LyricsTranslationHelper.TranslationStatus,
-    modifier: Modifier = Modifier
-) {
-    AnimatedVisibility(
-        visible = status !is LyricsTranslationHelper.TranslationStatus.Idle,
-        enter = fadeIn(),
-        exit = fadeOut(),
-        modifier = modifier
-    ) {
-        when (status) {
-            is LyricsTranslationHelper.TranslationStatus.Translating -> {
-                TranslationCard(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                ) {
-                    androidx.compose.material3.CircularProgressIndicator(
-                        modifier = Modifier.size(16.dp),
-                        strokeWidth = 2.dp,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                    Text(
-                        text = stringResource(R.string.ai_translating_lyrics),
-                        style = MaterialTheme.typography.labelMedium
-                    )
-                }
-            }
-            is LyricsTranslationHelper.TranslationStatus.Error -> {
-                TranslationCard(
-                    containerColor = MaterialTheme.colorScheme.errorContainer,
-                    contentColor = MaterialTheme.colorScheme.onErrorContainer
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.error),
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Text(
-                        text = status.message,
-                        style = MaterialTheme.typography.labelMedium
-                    )
-                }
-            }
-            is LyricsTranslationHelper.TranslationStatus.Success -> {
-                TranslationCard(
-                    containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onTertiaryContainer
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.check),
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Text(
-                        text = stringResource(R.string.ai_lyrics_translated),
-                        style = MaterialTheme.typography.labelMedium
-                    )
-                }
-            }
-            else -> {}
-        }
-    }
-}
-
-@Composable
-private fun TranslationCard(
-    containerColor: Color,
-    contentColor: Color,
-    content: @Composable RowScope.() -> Unit
-) {
-    Card(
-        colors = CardDefaults.cardColors(containerColor = containerColor, contentColor = contentColor),
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            content = content
-        )
-    }
-}
 
 @Composable
 internal fun LyricsActionOverlay(

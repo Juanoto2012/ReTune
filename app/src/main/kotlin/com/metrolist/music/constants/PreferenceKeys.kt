@@ -437,29 +437,6 @@ val LyricsScrollKey = booleanPreferencesKey("lyricsScrollKey")
 val HideStatusBarOnFullscreenKey = booleanPreferencesKey("hideStatusBarOnFullscreen")
 val LyricsRomanizeAsMainKey = booleanPreferencesKey("lyricsRomanizeAsMain")
 val LyricsRomanizeCyrillicByLineKey = booleanPreferencesKey("lyricsRomanizeCyrillicByLine")
-val OpenRouterApiKey = stringPreferencesKey("openRouterApiKey")
-val AiProviderKey = stringPreferencesKey("aiProvider")
-val OpenRouterBaseUrlKey = stringPreferencesKey("openRouterBaseUrl")
-val OpenRouterModelKey = stringPreferencesKey("openRouterModel")
-
-const val OpenRouterDefaultBaseUrl = "https://openrouter.ai/api/v1/chat/completions"
-const val OpenRouterDefaultModel = "google/gemini-2.5-flash-lite"
-
-val TranslateModeKey = stringPreferencesKey("translateMode")
-val TranslateLanguageKey = stringPreferencesKey("translateLanguage")
-val DeeplApiKey = stringPreferencesKey("deeplApiKey")
-val DeeplFormalityKey = stringPreferencesKey("deeplFormality")
-val AiSystemPromptKey = stringPreferencesKey("aiSystemPrompt")
-
-const val DEFAULT_AI_SYSTEM_PROMPT = """You are a precise lyrics translation assistant. Your output must ALWAYS be a valid JSON array of strings.
-
-CRITICAL RULES:
-1. Output ONLY a JSON array: ["line1", "line2", "line3"]
-2. NO explanations, NO questions, NO additional text
-3. Each input line maps to exactly one output line
-4. Preserve empty lines as empty strings ""
-5. Return EXACTLY {lineCount} items in the array
-6. If uncertain, provide best approximation but maintain line count"""
 val LyricsGlowEffectKey = booleanPreferencesKey("lyricsGlowEffect")
 
 val LyricsRomanizeList = stringPreferencesKey("lyricsRomanizeList")

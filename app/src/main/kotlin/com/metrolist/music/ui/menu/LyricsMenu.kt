@@ -65,7 +65,6 @@ import com.metrolist.music.LocalDatabase
 import com.metrolist.music.R
 import com.metrolist.music.db.entities.LyricsEntity
 import com.metrolist.music.db.entities.SongEntity
-import com.metrolist.music.lyrics.LyricsTranslationHelper
 import com.metrolist.music.lyrics.LyricsUtils
 import com.metrolist.music.models.MediaMetadata
 import com.metrolist.music.ui.component.DefaultDialog
@@ -76,18 +75,8 @@ import com.metrolist.music.ui.component.NewAction
 import com.metrolist.music.ui.component.NewActionGrid
 import com.metrolist.music.ui.component.TextFieldDialog
 import com.metrolist.music.viewmodels.LyricsMenuViewModel
-import com.metrolist.music.constants.OpenRouterApiKey
-import com.metrolist.music.constants.DeeplApiKey
-import com.metrolist.music.constants.AiProviderKey
-import com.metrolist.music.constants.TranslateLanguageKey
-import com.metrolist.music.constants.TranslateModeKey
 import com.metrolist.music.constants.RespectAgentPositioningKey
 import com.metrolist.music.constants.ShowIntervalIndicatorKey
-import com.metrolist.music.constants.OpenRouterBaseUrlKey
-import com.metrolist.music.constants.OpenRouterDefaultBaseUrl
-import com.metrolist.music.constants.OpenRouterDefaultModel
-import com.metrolist.music.constants.OpenRouterModelKey
-import com.metrolist.music.constants.DeeplFormalityKey
 import com.metrolist.music.utils.rememberPreference
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -103,22 +92,8 @@ fun LyricsMenu(
     val context = LocalContext.current
     val database = LocalDatabase.current
     
-    val openRouterApiKey by rememberPreference(OpenRouterApiKey, "")
-    val deeplApiKey by rememberPreference(DeeplApiKey, "")
-    val aiProvider by rememberPreference(AiProviderKey, "OpenRouter")
-    val translateLanguage by rememberPreference(TranslateLanguageKey, "en")
-    val translateMode by rememberPreference(TranslateModeKey, "Literal")
-    val openRouterBaseUrl by rememberPreference(OpenRouterBaseUrlKey, OpenRouterDefaultBaseUrl)
-    val openRouterModel by rememberPreference(OpenRouterModelKey, OpenRouterDefaultModel)
-    val deeplFormality by rememberPreference(DeeplFormalityKey, "default")
     var respectAgentPositioning by rememberPreference(RespectAgentPositioningKey, true)
     var showIntervalIndicator by rememberPreference(ShowIntervalIndicatorKey, true)
-
-    val hasApiKey = if (aiProvider == "DeepL") deeplApiKey.isNotBlank() else openRouterApiKey.isNotBlank()
-    
-    // Observe the authoritative translation-active state from the singleton; this persists
-    // correctly across menu open/close cycles and avoids the lyricsProvider() race condition.
-    val hasTranslations by LyricsTranslationHelper.hasActiveTranslations.collectAsStateWithLifecycle()
 
     var showEditDialog by rememberSaveable {
         mutableStateOf(false)
@@ -474,71 +449,6 @@ fun LyricsMenu(
         item {
             Material3MenuGroup(
                 items = buildList {
-                    // Add translation toggle option if API key is configured
-                    if (hasApiKey) {
-                        add(
-                            Material3MenuItemData(
-                                title = { Text(stringResource(R.string.ai_lyrics_translation)) },
-                                icon = {
-                                    Icon(
-                                        painter = painterResource(R.drawable.translate),
-                                        contentDescription = null,
-                                    )
-                                },
-                                onClick = {
-                                    if (hasTranslations) {
-                                        // Remove translations
-                                        lyricsProvider()?.let { lyrics ->
-                                            val clearedLyrics = LyricsTranslationHelper.clearTranslations(lyrics)
-                                            database.query {
-                                                upsert(clearedLyrics)
-                                            }
-                                            // Resets hasActiveTranslations and clears in-memory translations
-                                            LyricsTranslationHelper.triggerClearTranslations()
-                                        }
-                                    } else {
-                                        // Trigger translation
-                                        LyricsTranslationHelper.triggerManualTranslation()
-                                    }
-                                },
-                                trailingContent = {
-                                    Switch(
-                                        checked = hasTranslations,
-                                        onCheckedChange = { newCheckedState ->
-                                            if (newCheckedState) {
-                                                // Enable translations – hasActiveTranslations updates when done
-                                                LyricsTranslationHelper.triggerManualTranslation()
-                                            } else {
-                                                // Disable translations – triggerClearTranslations resets hasActiveTranslations
-                                                lyricsProvider()?.let { lyrics ->
-                                                    val clearedLyrics = LyricsTranslationHelper.clearTranslations(lyrics)
-                                                    database.query {
-                                                        upsert(clearedLyrics)
-                                                    }
-                                                    LyricsTranslationHelper.triggerClearTranslations()
-                                                }
-                                            }
-                                        },
-                                        thumbContent = {
-                                            Icon(
-                                                painter = painterResource(
-                                                    id = if (hasTranslations) R.drawable.check else R.drawable.close
-                                                ),
-                                                contentDescription = null,
-                                                modifier = Modifier.size(SwitchDefaults.IconSize)
-                                            )
-                                        },
-                                        colors = SwitchDefaults.colors(
-                                            uncheckedThumbColor = MaterialTheme.colorScheme.primaryContainer,
-                                            checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
-                                            checkedTrackColor = MaterialTheme.colorScheme.primary
-                                        )
-                                    )
-                                }
-                            )
-                        )
-                    }
-                    
                     add(
                         Material3MenuItemData(
                             title = { Text(stringResource(R.string.respect_agent_positioning)) },

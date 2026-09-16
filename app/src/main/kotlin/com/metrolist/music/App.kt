@@ -310,7 +310,8 @@ class App :
                 memoryCache {
                     MemoryCache
                         .Builder()
-                        .maxSizePercent(context, 0.15)
+                        .maxSizePercent(context, 0.25)
+                        .strongReferencesEnabled(true)
                         .build()
                 }
                 if (cacheSize == 0) {
@@ -321,6 +322,7 @@ class App :
                             .Builder()
                             .directory(StorageUtils.getStorageDir(context, "coil", useExternal))
                             .maxSizeBytes(cacheSize * 1024 * 1024L)
+                            .cleanupCoroutineContext(Dispatchers.IO)
                             .build(),
                     )
                     // Allow reading from disk cache as fallback when network is unavailable

@@ -90,12 +90,12 @@ constructor(
                 } ?: response.request
             }
             .dispatcher(Dispatcher().apply {
-                maxRequests = 64
-                maxRequestsPerHost = 64
+                maxRequests = 128
+                maxRequestsPerHost = 128
             })
-            .connectionPool(ConnectionPool(10, 5, TimeUnit.MINUTES))
-            .connectTimeout(15, TimeUnit.SECONDS)
-            .readTimeout(15, TimeUnit.SECONDS)
+            .connectionPool(ConnectionPool(20, 10, TimeUnit.MINUTES))
+            .connectTimeout(20, TimeUnit.SECONDS)
+            .readTimeout(20, TimeUnit.SECONDS)
             .build()
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -245,7 +245,7 @@ constructor(
             dataSourceFactory,
             Executor(Runnable::run)
         ).apply {
-            maxParallelDownloads = 16
+            maxParallelDownloads = 32
             addListener(
                 object : DownloadManager.Listener {
                     override fun onDownloadChanged(

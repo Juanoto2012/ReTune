@@ -668,45 +668,6 @@
     <string name="unblock">Unblock</string>
     <string name="user_blocked_by_host">Blocked by host</string>
 
-    <!-- AI Lyrics Translation -->
-    <string name="ai_lyrics_translation">AI lyrics translation</string>
-    <string name="ai_translating_lyrics">Translating lyrics…</string>
-    <string name="ai_lyrics_translated">Lyrics translated</string>
-    <string name="ai_provider">Provider</string>
-    <string name="ai_base_url">Base URL</string>
-    <string name="ai_api_key">API key</string>
-    <string name="ai_model">Model</string>
-    <string name="ai_translation_mode">Translation mode</string>
-    <string name="ai_target_language">Target language</string>
-    <string name="ai_setup_guide">API credentials</string>
-    <string name="ai_translation_literal">Translation</string>
-    <string name="ai_translation_literal_desc">Translates the meaning into the target language</string>
-    <string name="ai_translation_transcribed">Transcription</string>
-    <string name="ai_translation_transcribed_desc">Converts pronunciation into the target script</string>
-    <string name="ai_api_key_required">API key required</string>
-    <string name="ai_error_api_key_required">An API key is required</string>
-    <string name="ai_error_no_lyrics">No lyrics to translate</string>
-    <string name="ai_error_lyrics_empty">Lyrics are empty</string>
-    <string name="ai_error_language_required">A target language is required</string>
-    <string name="ai_error_unknown">An unknown error occurred</string>
-    <string name="ai_error_translation_failed">Translation failed</string>
-    <string name="ai_provider_help">Get API keys</string>
-    <string name="ai_provider_openrouter_help">Visit https://openrouter.ai for free and paid models</string>
-    <string name="ai_provider_openai_help">Visit https://platform.openai.com/api-keys</string>
-    <string name="ai_provider_claude_help">Visit https://console.anthropic.com/settings/keys</string>
-    <string name="ai_provider_gemini_help">Visit https://aistudio.google.com/apikey</string>
-    <string name="ai_provider_perplexity_help">Visit https://perplexity.ai/settings/api</string>
-    <string name="ai_provider_xai_help">Visit https://console.x.ai</string>
-    <string name="ai_provider_deepl_help">Visit https://deepl.com/pro-api for free and paid keys</string>
-    <string name="ai_provider_mistral_help">Visit https://console.mistral.ai/api-keys</string>
-    <string name="ai_deepl_formality">Formality</string>
-    <string name="ai_deepl_formality_default">Default</string>
-    <string name="ai_deepl_formality_more">More formal</string>
-    <string name="ai_deepl_formality_less">Less formal</string>
-    <string name="ai_system_prompt">System prompt</string>
-    <string name="ai_system_prompt_default">Default</string>
-    <string name="ai_system_prompt_reset">Reset to default</string>
-
     <!-- Crash Handler -->
     <string name="crash_title">App crashed</string>
     <string name="crash_description">An unexpected error occurred. Please share the crash report to help us fix the issue</string>
@@ -857,6 +818,7 @@
     <string name="credits_discord">Discord server</string>
     <string name="credits_telegram">Telegram channel</string>
     <string name="credits_view_repo">View repository</string>
+    <string name="donation_link">Buy Me a Coffee (JJDev Studio)</string>
     <string name="buy_mo_a_coffee">Buy me a coffee!</string>
     <string name="community_and_info">Community &amp; Info</string>
     <string name="metrolist">RETUNE</string>

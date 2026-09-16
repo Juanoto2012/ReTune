@@ -108,6 +108,7 @@ private val collaborators = listOf(
 )
 
 private val communityLinks = listOf(
+    CommunityLink(R.string.donation_link, R.drawable.buymeacoffee, "https://buymeacoffee.com/jjdevstudio"),
     CommunityLink(R.string.credits_discord, R.drawable.discord, "https://discord.com/invite/zrdbeRG2Mt"),
     CommunityLink(R.string.credits_telegram, R.drawable.telegram, "https://t.me/metrolistapp"),
     CommunityLink(R.string.credits_view_repo, R.drawable.github, "https://github.com/Juanoto2012/Retune"),
