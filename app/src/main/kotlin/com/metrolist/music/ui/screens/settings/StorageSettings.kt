@@ -28,6 +28,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
@@ -41,6 +42,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavController
 import coil3.SingletonImageLoader
 import coil3.annotation.DelicateCoilApi
@@ -61,15 +66,23 @@ import com.metrolist.music.ui.component.Material3SettingsGroup
 import com.metrolist.music.ui.component.Material3SettingsItem
 import android.text.format.Formatter
 import com.metrolist.music.ui.utils.backToMain
+import com.metrolist.music.utils.StorageUtils
 import com.metrolist.music.utils.rememberPreference
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import okio.ByteString.Companion.encodeUtf8
 import java.io.File
 import kotlin.math.roundToInt
+
+/** Cache directories that follow the "use SD card" preference and must be carried over on a switch. */
+private val MOVABLE_CACHE_DIRS = listOf("exoplayer", "download", "coil")
+
+/** Walking a large cache directory on a slow SD card is expensive, so poll sparingly. */
+private const val CACHE_SIZE_POLL_INTERVAL_MS = 2000L
 
 @OptIn(ExperimentalCoilApi::class, ExperimentalMaterial3Api::class, DelicateCoilApi::class)
 @Composable
@@ -105,6 +118,21 @@ fun StorageSettings(
     var clearDownloads by remember { mutableStateOf(false) }
     var clearCacheDialog by remember { mutableStateOf(false) }
     var clearImageCacheDialog by remember { mutableStateOf(false) }
+
+    // SD card presence is re-evaluated instead of being frozen at composition time, so inserting
+    // or removing the card is picked up without restarting the app.
+    val lifecycleOwner = LocalLifecycleOwner.current
+    var sdCardAvailable by remember { mutableStateOf(StorageUtils.isSdCardPresent(context)) }
+    DisposableEffect(lifecycleOwner) {
+        val observer =
+            LifecycleEventObserver { _, event ->
+                if (event == Lifecycle.Event.ON_RESUME || event == Lifecycle.Event.ON_START) {
+                    sdCardAvailable = StorageUtils.isSdCardPresent(context)
+                }
+            }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
 
     // State for the confirmation dialog
     var showCacheWarningDialog by remember { mutableStateOf(false) }
@@ -157,22 +185,31 @@ fun StorageSettings(
         }
     }
 
-    LaunchedEffect(imageDiskCache) {
-        while (isActive) {
-            delay(500)
-            imageCacheSize = imageDiskCache.size
+    // Cache sizes are polled while the screen is resumed, on an IO dispatcher, and on a slow
+    // interval. Walking a multi-gigabyte cache on a slow SD card is expensive, so this used to
+    // stall the UI three times per second.
+    LaunchedEffect(lifecycleOwner, imageDiskCache) {
+        lifecycleOwner.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            while (isActive) {
+                delay(CACHE_SIZE_POLL_INTERVAL_MS)
+                imageCacheSize = withContext(Dispatchers.IO) { imageDiskCache.size }
+            }
         }
     }
-    LaunchedEffect(playerCache) {
-        while (isActive) {
-            delay(500)
-            playerCacheSize = tryOrNull { playerCache.cacheSpace } ?: 0
+    LaunchedEffect(lifecycleOwner, playerCache) {
+        lifecycleOwner.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            while (isActive) {
+                delay(CACHE_SIZE_POLL_INTERVAL_MS)
+                playerCacheSize = withContext(Dispatchers.IO) { tryOrNull { playerCache.cacheSpace } ?: 0L }
+            }
         }
     }
-    LaunchedEffect(downloadCache) {
-        while (isActive) {
-            delay(500)
-            downloadCacheSize = tryOrNull { downloadCache.cacheSpace } ?: 0
+    LaunchedEffect(lifecycleOwner, downloadCache) {
+        lifecycleOwner.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            while (isActive) {
+                delay(CACHE_SIZE_POLL_INTERVAL_MS)
+                downloadCacheSize = withContext(Dispatchers.IO) { tryOrNull { downloadCache.cacheSpace } ?: 0L }
+            }
         }
     }
 
@@ -312,6 +349,27 @@ fun StorageSettings(
         )
     }
 
+    // Moving the cache between internal storage and the SD card used to simply relocate the
+    // directory, which silently "lost" every download and song cache entry. The old content is
+    // copied over first, so switching back and forth is lossless.
+    fun requestStorageLocation(useSdCard: Boolean) {
+        if (useSdCard && !StorageUtils.isSdCardPresent(context)) return
+        val previousExternal = useExternalStorage
+        if (previousExternal != useSdCard) {
+            coroutineScope.launch(Dispatchers.IO) {
+                MOVABLE_CACHE_DIRS.forEach { name ->
+                    val source = StorageUtils.getStorageDir(context, name, useExternal = previousExternal)
+                    val destination = StorageUtils.getStorageDir(context, name, useExternal = useSdCard)
+                    if (source.absolutePath != destination.absolutePath) {
+                        StorageUtils.copyDirectoryContent(source, destination)
+                    }
+                }
+            }
+        }
+        onUseExternalStorageChange(useSdCard)
+        showRestartDialog = true
+    }
+
     Column(
         Modifier
             .windowInsetsPadding(
@@ -336,9 +394,8 @@ fun StorageSettings(
                         icon = painterResource(R.drawable.storage),
                         title = { Text(stringResource(R.string.storage_location)) },
                         description = {
-                            val isSdPresent = remember { com.metrolist.music.utils.StorageUtils.isSdCardPresent(context) }
                             Text(
-                                if (isSdPresent) {
+                                if (sdCardAvailable) {
                                     stringResource(R.string.use_sd_card_desc)
                                 } else {
                                     stringResource(R.string.sd_card_not_detected)
@@ -346,14 +403,10 @@ fun StorageSettings(
                             )
                         },
                         trailingContent = {
-                            val isSdPresent = remember { com.metrolist.music.utils.StorageUtils.isSdCardPresent(context) }
                             Switch(
                                 checked = useExternalStorage,
-                                enabled = isSdPresent,
-                                onCheckedChange = {
-                                    onUseExternalStorageChange(it)
-                                    showRestartDialog = true
-                                },
+                                enabled = sdCardAvailable,
+                                onCheckedChange = { requestStorageLocation(it) },
                                 thumbContent = {
                                     Icon(
                                         painter = painterResource(
@@ -365,12 +418,7 @@ fun StorageSettings(
                                 }
                             )
                         },
-                        onClick = {
-                            if (com.metrolist.music.utils.StorageUtils.isSdCardPresent(context)) {
-                                onUseExternalStorageChange(!useExternalStorage)
-                                showRestartDialog = true
-                            }
-                        }
+                        onClick = { requestStorageLocation(!useExternalStorage) }
                     ),
                     Material3SettingsItem(
                         icon = painterResource(R.drawable.storage),

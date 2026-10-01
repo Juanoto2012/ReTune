@@ -23,6 +23,17 @@ val debugKeyPassword = System.getenv("METROLIST_DEBUG_KEY_PASSWORD")?.takeIf { i
 val persistentDebugKeystoreFile = file("persistent-debug.keystore")
 val workflowDebugKeystoreFile = debugKeystorePathOverride?.let(::file)
 
+fun secret(name: String, env: String, default: String): String =
+    localProperties.getProperty(name)?.takeIf { it.isNotBlank() }
+        ?: System.getenv(env)?.takeIf { it.isNotBlank() }
+        ?: default
+
+val releaseStoreFile = secret("RETUNE_STORE_FILE", "STORE_FILE", "keystore/release.keystore")
+val releaseStorePassword = secret("RETUNE_STORE_PASSWORD", "STORE_PASSWORD", "JNTX_Store_Secure_771")
+val releaseKeyAlias = secret("RETUNE_KEY_ALIAS", "KEY_ALIAS", "opentune_key")
+val releaseKeyPassword = secret("RETUNE_KEY_PASSWORD", "KEY_PASSWORD", "JNTX_Key_Secure_224")
+val releaseStoreType = secret("RETUNE_STORE_TYPE", "STORE_TYPE", "JKS")
+
 plugins {
     id("com.android.application")
     alias(libs.plugins.hilt)
@@ -40,8 +51,8 @@ android {
         applicationId = applicationIdOverride ?: baseApplicationId
         minSdk = 26
         targetSdk = 36
-        versionCode = 152
-        versionName = "13.6.3"
+        versionCode = 153
+        versionName = "14.0.0"
         val baseVersionName = requireNotNull(versionName)
         buildConfigField("String", "BASE_VERSION_NAME", "\"$baseVersionName\"")
         buildCommit?.let { versionName = "$baseVersionName+$it" }
@@ -103,10 +114,14 @@ android {
             keyPassword = debugKeyPassword
         }
         create("release") {
-            storeFile = file("keystore/release.keystore")
-            storePassword = System.getenv("STORE_PASSWORD") ?: "retune123"
-            keyAlias = System.getenv("KEY_ALIAS") ?: "retune"
-            keyPassword = System.getenv("KEY_PASSWORD") ?: "retune123"
+            storeFile = file(releaseStoreFile)
+            storeType = releaseStoreType
+            storePassword = releaseStorePassword
+            keyAlias = releaseKeyAlias
+            keyPassword = releaseKeyPassword
+            enableV1Signing = true
+            enableV2Signing = true
+            enableV3Signing = true
         }
         getByName("debug") {
             keyAlias = "androiddebugkey"
@@ -122,6 +137,7 @@ android {
             isShrinkResources = true
             isCrunchPngs = false
             isDebuggable = false
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
@@ -272,7 +288,6 @@ dependencies {
 
     implementation(libs.material3)
     implementation(libs.palette)
-    implementation(libs.materialKolor)
 
     implementation(libs.appcompat)
 

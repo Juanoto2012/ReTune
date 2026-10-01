@@ -11,8 +11,7 @@ import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.metrolist.innertube.YouTube
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import com.metrolist.music.utils.GlobalIoScope
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 
@@ -83,7 +82,7 @@ data class SongEntity(
             inLibrary = if (!liked) inLibrary ?: LocalDateTime.now() else inLibrary,
         ).also {
             if (syncToYouTube) {
-                CoroutineScope(Dispatchers.IO).launch {
+                GlobalIoScope.launch {
                     YouTube.likeVideo(id, !liked)
                 }
             }
@@ -96,7 +95,7 @@ data class SongEntity(
             likedDate = if (inLibrary == null) likedDate else null,
         ).also {
             if (syncToYouTube) {
-                CoroutineScope(Dispatchers.IO).launch {
+                GlobalIoScope.launch {
                     // Use the new reliable method that fetches fresh tokens
                     val addToLibrary = inLibrary == null
                     YouTube.toggleSongLibrary(id, addToLibrary)

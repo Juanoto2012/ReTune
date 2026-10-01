@@ -10,8 +10,7 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.metrolist.innertube.YouTube
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import com.metrolist.music.utils.GlobalIoScope
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 
@@ -46,7 +45,7 @@ data class ArtistEntity(
     )
 
     fun toggleLike() = localToggleLike().also {
-        CoroutineScope(Dispatchers.IO).launch {
+        GlobalIoScope.launch {
             val targetChannelId = channelId ?: YouTube.getChannelId(id)
             if (targetChannelId.isNotEmpty()) {
                 YouTube.subscribeChannel(targetChannelId, bookmarkedAt == null)

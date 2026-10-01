@@ -55,7 +55,7 @@ fun LoadingScreen(
         Column(
             modifier = Modifier
                 .fillMaxWidth(0.9f)
-                .clip(RoundedCornerShape(28.dp))
+                .clip(RoundedCornerShape(14.dp))
                 .background(MaterialTheme.colorScheme.surfaceContainerHigh)
                 .padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),

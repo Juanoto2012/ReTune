@@ -417,7 +417,7 @@ fun OnlineSearchResult(
                     },
                 ),
             singleLine = true,
-            shape = RoundedCornerShape(28.dp),
+            shape = RoundedCornerShape(14.dp),
             colors =
                 OutlinedTextFieldDefaults.colors(
                     focusedContainerColor =

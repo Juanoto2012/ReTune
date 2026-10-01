@@ -304,7 +304,10 @@ class App :
         return ImageLoader
             .Builder(this)
             .apply {
-                crossfade(true)
+                // Crossfade keeps a second bitmap alive for every list cell while scrolling and
+                // forces a redraw per image. Disabling it is the cheapest meaningful win for
+                // smoothness on low-end devices.
+                crossfade(false)
                 allowHardware(Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
                 // Memory cache for fast image loading (prevents network requests on recomposition)
                 memoryCache {

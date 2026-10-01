@@ -29,6 +29,7 @@ import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import timber.log.Timber
 import java.io.File
 import javax.inject.Singleton
 
@@ -54,14 +55,48 @@ object AppModule {
     fun provideInternalDatabase(
         @ApplicationContext context: Context,
     ): InternalDatabase {
-        val useExternal = context.dataStore[UseExternalStorageKey] ?: false
-        val dbName = if (useExternal && StorageUtils.isSdCardPresent(context)) {
-            val dir = StorageUtils.getStorageDir(context, "databases", useExternal = true)
-            File(dir, InternalDatabase.DB_NAME).absolutePath
-        } else {
-            InternalDatabase.DB_NAME
+        // The library database intentionally never follows the SD-card preference. A removable
+        // volume can vanish mid-session, and SQLite in WAL mode on slow FAT32 media is both
+        // sluggish and the most likely source of corruption. Keeping it internal preserves the
+        // existing data structure and the migration chain untouched.
+        val dir = StorageUtils.getStorageDir(context, "databases", useExternal = false)
+        val dbFile = File(dir, InternalDatabase.DB_NAME)
+        adoptLegacyExternalDatabase(context, dbFile)
+        return InternalDatabase.newInternalDatabaseInstance(context, dbFile.absolutePath)
+    }
+
+    /**
+     * Earlier ReTune builds stored the library database on the SD card when the user enabled
+     * "use SD card". Those users still have their library there, so the very first launch after
+     * this change would otherwise come up with an empty internal database.
+     *
+     * When — and only when — no internal database exists yet, the legacy SD copy (main file plus
+     * its write-ahead log) is imported so the user keeps their library, playlists and history.
+     * The `-shm` file is deliberately not copied: SQLite rebuilds it from the log.
+     */
+    private fun adoptLegacyExternalDatabase(
+        context: Context,
+        internalDbFile: File,
+    ) {
+        if (internalDbFile.exists()) return
+        val legacyDir = runCatching { StorageUtils.getStorageDir(context, "databases", useExternal = true) }
+            .getOrNull() ?: return
+        val legacyDb = File(legacyDir, InternalDatabase.DB_NAME)
+        if (!legacyDb.isFile || legacyDb.length() == 0L) return
+
+        runCatching {
+            internalDbFile.parentFile?.mkdirs()
+            legacyDb.copyTo(internalDbFile, overwrite = false)
+            // The WAL may hold transactions committed after the last checkpoint.
+            File(legacyDb.path + "-wal").takeIf { it.isFile }?.copyTo(
+                File(internalDbFile.path + "-wal"),
+                overwrite = false,
+            )
+        }.onSuccess {
+            Timber.tag("AppModule").i("Adopted legacy SD card library database into internal storage")
+        }.onFailure {
+            Timber.tag("AppModule").e(it, "Failed to adopt legacy SD card library database")
         }
-        return InternalDatabase.newInternalDatabaseInstance(context, dbName)
     }
 
     @Singleton
@@ -110,7 +145,6 @@ object AppModule {
             databaseProvider,
         )
     }
-
     @Singleton
     @Provides
     fun provideListenTogetherClient(

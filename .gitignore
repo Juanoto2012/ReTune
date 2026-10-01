@@ -103,6 +103,11 @@ core.*
 .env
 app/src/main/java/com/metrolist/music/listentogether/proto/*
 
+# Signing material (never commit keystores)
+app/keystore/
+*.keystore
+*.jks
+
 # FFTW third-party library build artifacts
 .build-fftw
 app/src/main/cpp/coverart/

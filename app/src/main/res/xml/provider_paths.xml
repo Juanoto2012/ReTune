@@ -9,7 +9,12 @@
     <external-cache-path
         name="external_cache"
         path="." />
+    <!-- `legacy_external_files_documents` keeps already-shared exports openable after the
+         export folder was renamed from MetrolistExports to ReTuneExports. -->
     <external-files-path
         name="external_files_documents"
+        path="Documents/ReTuneExports/" />
+    <external-files-path
+        name="legacy_external_files_documents"
         path="Documents/MetrolistExports/" />
 </paths>

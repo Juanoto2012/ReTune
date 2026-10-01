@@ -10,8 +10,7 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.metrolist.innertube.YouTube
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import com.metrolist.music.utils.GlobalIoScope
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 
@@ -50,7 +49,7 @@ data class AlbumEntity(
     )
 
     fun toggleLike() = localToggleLike().also {
-        CoroutineScope(Dispatchers.IO).launch {
+        GlobalIoScope.launch {
             if (playlistId != null)
                 YouTube.likePlaylist(playlistId, bookmarkedAt == null)
         }

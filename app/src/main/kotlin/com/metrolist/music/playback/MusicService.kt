@@ -205,6 +205,7 @@ import com.metrolist.music.playback.queues.filterVideoSongs
 import com.metrolist.music.constants.LoudnessLevel
 import com.metrolist.music.constants.LoudnessLevelKey
 import com.metrolist.music.utils.CoilBitmapLoader
+import com.metrolist.music.utils.GlobalIoScope
 import com.metrolist.music.utils.NetworkConnectivityObserver
 import com.metrolist.music.utils.ScrobbleManager
 import com.metrolist.music.utils.SyncUtils
@@ -4166,8 +4167,14 @@ class MusicService :
 
         val currentMetadata = player.currentMediaItem?.metadata
         if (currentMetadata?.isEpisode == true && player.currentPosition > 0) {
-            runBlocking(Dispatchers.IO) {
-                database.updatePlaybackPosition(currentMetadata.id, player.currentPosition)
+            // Persisting on the process-wide scope instead of `runBlocking` keeps `onDestroy` off
+            // the critical path. Blocking here stalled service teardown, and with the service
+            // being restarted for every track change that showed up as UI jank. The write still
+            // completes because the scope outlives the service.
+            val episodeId = currentMetadata.id
+            val position = player.currentPosition
+            GlobalIoScope.launch {
+                runCatching { database.updatePlaybackPosition(episodeId, position) }
             }
         }
 

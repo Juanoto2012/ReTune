@@ -259,7 +259,10 @@ private fun backupDatabase(
 
     val timestamp = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.US).format(Date())
     val backupDir = File(context.filesDir, "database_backups").apply { mkdirs() }
-    val backupBase = File(backupDir, "${dbName}_backup_$timestamp")
+    // `dbName` may be an absolute path. Using it verbatim as a child of `backupDir` would let the
+    // absolute component win and drop the backup next to the database instead of in `backupDir`,
+    // so only the file name is used.
+    val backupBase = File(backupDir, "${dbFile.name}_backup_$timestamp")
 
     fun copyFile(
         src: File,

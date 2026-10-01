@@ -344,7 +344,7 @@ fun DiscordSettings(
         }
 
         Card(
-            shape = RoundedCornerShape(28.dp),
+            shape = RoundedCornerShape(14.dp),
             colors =
                 CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,

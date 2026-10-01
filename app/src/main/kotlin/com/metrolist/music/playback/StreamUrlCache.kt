@@ -43,12 +43,26 @@ internal class StreamUrlCache(
         val expiresAtMillis: Long,
     )
 
-    private val entries =
-        object : LinkedHashMap<String, Entry>(0, 0.75f, true) {
-            override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Entry>): Boolean =
+    /**
+     * Monotonic counter per media id used to reject a stream URL that was resolved for a cache
+     * generation that has since been invalidated. It is bounded like [entries] because it used to
+     * be a plain `HashMap` that grew by one entry for every distinct media id ever touched and was
+     * never pruned, which is a slow leak on long listening sessions.
+     */
+    private val generations =
+        object : LinkedHashMap<String, Long>(0, 0.75f, true) {
+            override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Long>): Boolean =
                 size > maxEntries
         }
-    private val generations = HashMap<String, Long>()
+
+    private val entries =
+        object : LinkedHashMap<String, Entry>(0, 0.75f, true) {
+            override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Entry>): Boolean {
+                if (size <= maxEntries) return false
+                generations.remove(eldest.key)
+                return true
+            }
+        }
 
     init {
         require(maxEntries > 0) { "maxEntries must be greater than zero" }

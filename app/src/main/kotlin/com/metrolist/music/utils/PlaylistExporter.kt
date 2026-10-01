@@ -13,6 +13,9 @@ import java.io.File
 import java.io.FileWriter
 import java.io.IOException
 
+/** Folder name used for playlist exports, both in app storage and in public Documents. */
+private const val EXPORT_DIR_NAME = "ReTuneExports"
+
 object PlaylistExporter {
     fun exportPlaylistAsCSV(
         context: Context,
@@ -151,7 +154,7 @@ private fun createExportFile(
     filename: String,
 ): File {
     // Create directory if it doesn't exist
-    val exportDir = File(context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS), "MetrolistExports")
+    val exportDir = File(context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS), EXPORT_DIR_NAME)
     if (!exportDir.exists()) {
         exportDir.mkdirs()
     }
@@ -193,14 +196,14 @@ fun getExportFileUri(
 ): Uri = getFileUri(context, file)
 
 /**
- * Copy a generated export file into the public Documents/MetrolistExports folder using MediaStore (scoped storage).
+ * Copy a generated export file into the public Documents/ReTuneExports folder using MediaStore (scoped storage).
  * Returns the Uri to the public copy on success.
  */
 fun saveToPublicDocuments(
     context: Context,
     source: File,
     mimeType: String,
-    subdirectory: String = "MetrolistExports",
+    subdirectory: String = EXPORT_DIR_NAME,
 ): Result<Uri> {
     return try {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
